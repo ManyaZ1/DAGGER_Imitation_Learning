@@ -11,7 +11,26 @@ import matplotlib.pyplot as plt
 env = gym.make("CartPole-v1")
 state_dim = env.observation_space.shape[0]
 action_dim = env.action_space.n
+# Set a global seed
+SEED = 42
 
+# 1. Python / NumPy / Random
+#random.seed(SEED)
+np.random.seed(SEED)
+
+# 2. PyTorch
+torch.manual_seed(SEED)
+torch.cuda.manual_seed(SEED)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
+# 3. Gym (newer API)
+env = gym.make("CartPole-v1")
+env.reset(seed=SEED)
+env.action_space.seed(SEED)
+env.observation_space.seed(SEED)
+# --- variables ---
+MAX_DATASET_SIZE = 2000
 # --- Expert Policy ---
 class Expert:
     def predict(self, state):
@@ -73,7 +92,9 @@ def train_dagger(expert, policy, num_iterations=5):
         expert_actions = [expert.predict(s) for s in trajectory]
         states.extend(trajectory)
         actions.extend(expert_actions)
-
+        if len(states) > MAX_DATASET_SIZE:
+            states = states[-MAX_DATASET_SIZE:]
+            actions = actions[-MAX_DATASET_SIZE:]
         # --- Train policy ---
         states_np = np.array(states, dtype=np.float32)
         actions_np = np.array(actions, dtype=np.int64)
@@ -82,8 +103,9 @@ def train_dagger(expert, policy, num_iterations=5):
             torch.from_numpy(actions_np)
         )
         loader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
-        
-        for epoch in range(3):
+        #print(len(dataset))
+        epochs = min(10, 3 + len(states) // 500)
+        for epoch in range(epochs):
             for batch_states, batch_actions in loader:
                 logits = policy(batch_states)
                 loss = nn.CrossEntropyLoss()(logits, batch_actions)
@@ -106,6 +128,20 @@ def evaluate(policy, num_episodes=10):
             total_reward += reward
             obs = next_obs
     return total_reward / num_episodes
+def evaluate_policy(policy, episodes=10):
+    rewards = []
+    for _ in range(episodes):
+        obs, _ = env.reset()
+        done = False
+        total = 0
+        while not done:
+            with torch.no_grad():
+                action = torch.argmax(policy(torch.FloatTensor(obs))).item()
+            obs, reward, terminated, truncated, _ = env.step(action)
+            done = terminated or truncated
+            total += reward
+        rewards.append(total)
+    return np.mean(rewards)
 
 # --- Run Experiment ---
 if __name__ == "__main__":
@@ -134,16 +170,20 @@ if __name__ == "__main__":
     
     # Train DAGGER
     dagger_policy = Policy()
-    dagger_policy, dagger_rewards = train_dagger(expert, dagger_policy)
+    dagger_policy, dagger_rewards = train_dagger(expert, dagger_policy, num_iterations=20)
 
     # --- Compare ---
-    print(f"BC Average Reward: {evaluate(bc_policy, 30)}")
-    print(f"DAGGER Average Reward: {evaluate(dagger_policy, 30)}")
-
+    print(f"BC Average Reward: {evaluate_policy(bc_policy, 60)}")
+    print(f"DAGGER Average Reward: {evaluate_policy(dagger_policy, 60)}")
+    
     # --- Plot reward over iterations ---
     plt.plot(dagger_rewards, marker='o')
     plt.xlabel("DAGGER Iteration")
     plt.ylabel("Reward")
     plt.title("DAGGER Training Progress")
     plt.grid(True)
+    plt.axhline(evaluate_policy(bc_policy, 30), color='red', linestyle='--', label='BC')
+    plt.plot(dagger_rewards, marker='o', label='DAgger')
+    plt.legend()
+
     plt.show()

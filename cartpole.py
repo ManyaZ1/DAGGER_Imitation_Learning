@@ -45,21 +45,19 @@ class ScriptedCartPoleExpert:
         return 0 if future_angle < 0 else 1
 
 
-def evaluate(expert, env, episodes=20):
-    total = 0
-    for _ in range(episodes):
-        obs, _ = env.reset()
-        done = False
-        while not done:
-            action = expert.predict(obs)
-            obs, reward, terminated, truncated, _ = env.step(action)
-            done = terminated or truncated
-            total += reward
-    return total / episodes
+    def evaluateExp(self,expert, env, episodes=20):
+        total = 0
+        for _ in range(episodes):
+            obs, _ = env.reset()
+            done = False
+            while not done:
+                action = expert.predict(obs)
+                obs, reward, terminated, truncated, _ = env.step(action)
+                done = terminated or truncated
+                total += reward
+        return total / episodes
 
-expert = ScriptedCartPoleExpert()
-score = evaluate(expert, env, episodes=20)
-print(f"Expert average reward: {score}")
+
 
 
 # --- BC/DAGGER Learner (Neural Network) ---
@@ -171,7 +169,8 @@ def evaluate_policy(policy, episodes=10):
 # --- Run Experiment ---
 if __name__ == "__main__":
     expert = ScriptedCartPoleExpert()
-    
+    score = expert.evaluateExp(expert, env, episodes=20)
+    print(f"Expert average reward: {score}")
     # Train BC
     (bc_states, bc_actions) = train_bc(expert)
     bc_policy = Policy()
@@ -209,6 +208,7 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.axhline(evaluate_policy(bc_policy, 30), color='red', linestyle='--', label='BC')
     plt.plot(dagger_rewards, marker='o', label='DAgger')
+    plt.hlines(score,xmin=0,xmax=20, color='black',label='expert')
     plt.legend()
 
     plt.show()

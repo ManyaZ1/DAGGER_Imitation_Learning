@@ -10,6 +10,7 @@ env = gym.make("CartPole-v1")
 state_dim = env.observation_space.shape[0]
 action_dim = env.action_space.n
 # Set a global seed
+SEED = 40
 
 # 1. Python / NumPy / Random
 #random.seed(SEED)

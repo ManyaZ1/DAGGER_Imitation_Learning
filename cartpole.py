@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-import random
 np.bool8 = np.bool_  # Fix for Gym expecting deprecated alias
 import gym
 import torch.nn as nn
@@ -11,7 +10,6 @@ env = gym.make("CartPole-v1")
 state_dim = env.observation_space.shape[0]
 action_dim = env.action_space.n
 # Set a global seed
-SEED = 42
 
 # 1. Python / NumPy / Random
 #random.seed(SEED)
@@ -48,9 +46,16 @@ class ScriptedCartPoleExpert:
     def evaluateExp(self,expert, env, episodes=20):
         total = 0
         for _ in range(episodes):
-            obs, _ = env.reset()
+            obs, _ = env.reset() #many episodes
             done = False
-            while not done:
+            while not done:  #many steps per episode 
+                '''Episode End 
+                    The episode ends if any one of the following occurs:
+                    1.Termination: Pole Angle is greater than ±12°
+                    2.Termination: Cart Position is greater than ±2.4 (center of the cart reaches the edge of the display)
+                    3.Truncation: Episode length is greater than 500 (200 for v0)
+                    https://www.gymlibrary.dev/environments/classic_control/cart_pole/
+                    '''
                 action = expert.predict(obs)
                 obs, reward, terminated, truncated, _ = env.step(action)
                 done = terminated or truncated
@@ -151,6 +156,7 @@ def evaluate(policy, num_episodes=10):
             total_reward += reward
             obs = next_obs
     return total_reward / num_episodes
+
 def evaluate_policy(policy, episodes=10):
     rewards = []
     for _ in range(episodes):
@@ -210,5 +216,4 @@ if __name__ == "__main__":
     plt.plot(dagger_rewards, marker='o', label='DAgger')
     plt.hlines(score,xmin=0,xmax=20, color='black',label='expert')
     plt.legend()
-
     plt.show()

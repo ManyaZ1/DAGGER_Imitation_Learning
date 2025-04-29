@@ -34,6 +34,7 @@ MAX_DATASET_SIZE = 2000
 # --- CartPole-v1 Expert ---
 class ScriptedCartPoleExpert:
     def predict(self, obs):
+        'input:obs: numpy array of shape (4,) [cart_position, cart_velocity, pole_angle, pole_velocity]'
         angle = obs[2]
         angle_velocity = obs[3]
 
@@ -96,6 +97,7 @@ def train_bc(expert, num_episodes=10):
 
 # --- Train with DAGGER ---
 def train_dagger(expert, policy, num_iterations=5):
+    'expert: expert policy, policy: neural network'
     optimizer = optim.Adam(policy.parameters())
     states, actions = [], []
     rewards = []
@@ -109,21 +111,23 @@ def train_dagger(expert, policy, num_iterations=5):
         while not done:
             trajectory.append(obs)
             with torch.no_grad():
-                action = torch.argmax(policy(torch.FloatTensor(obs))).item()
+                action = torch.argmax(policy(torch.FloatTensor(obs))).item() # επιλέγουμε την ενέργεια με το μεγαλύτερο logit	(logit = output της πολιτικής)
             next_obs, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
             total_reward += reward
             obs = next_obs
         
         rewards.append(total_reward)
+        # το trajectory είναι μια λίστα με τα states που επισκέφτηκε η πολιτική
 
         # --- Expert labeling + aggregation ---
-        expert_actions = [expert.predict(s) for s in trajectory]
+        expert_actions = [expert.predict(s) for s in trajectory] # οι ενέργειες που θα έδινε ο expert για τα states του trajectory
         states.extend(trajectory)
         actions.extend(expert_actions)
-        if len(states) > MAX_DATASET_SIZE:
+        if len(states) > MAX_DATASET_SIZE: # κρατάμε μόνο τα τελευταία MAX_DATASET_SIZE states
             states = states[-MAX_DATASET_SIZE:]
             actions = actions[-MAX_DATASET_SIZE:]
+
         # --- Train policy ---
         states_np = np.array(states, dtype=np.float32)
         actions_np = np.array(actions, dtype=np.int64)
@@ -131,12 +135,15 @@ def train_dagger(expert, policy, num_iterations=5):
             torch.from_numpy(states_np),
             torch.from_numpy(actions_np)
         )
+        # dataset in batches of 32, shuffle to avoid bias
         loader = torch.utils.data.DataLoader(dataset, batch_size=32, shuffle=True)
         #print(len(dataset))
+        #GOAL: to make policy predict the same action as expert
         epochs = min(10, 3 + len(states) // 500)
         for epoch in range(epochs):
             for batch_states, batch_actions in loader:
-                logits = policy(batch_states)
+                logits = policy(batch_states)  # raw scores για κάθε action
+                #cross entropy loss για classification (logits, actions)
                 loss = nn.CrossEntropyLoss()(logits, batch_actions)
                 optimizer.zero_grad()
                 loss.backward()
@@ -144,20 +151,26 @@ def train_dagger(expert, policy, num_iterations=5):
     
     return (policy, rewards)
 
-# --- Evaluate Policy (Fixed) ---
-def evaluate(policy, num_episodes=10):
-    total_reward = 0
-    for _ in range(num_episodes):
-        obs, _ = env.reset()  # Unpack tuple
-        done = False
-        while not done:
-            action = torch.argmax(policy(torch.FloatTensor(obs))).item()
-            next_obs, reward, terminated, truncated, _ = env.step(action)
-            done = terminated or truncated
-            total_reward += reward
-            obs = next_obs
-    return total_reward / num_episodes
+''' το dagger δηάδη ξεκιναει με μια τυχαια πολιτικη και βγαζει ενα trajectory
+υστερα δίνουμε αυτο το trajectory στον expert ο οποιος μας δινει τι actions θα 
+εκανε στο καθε state 
+#GOAL: to make policy predict the same action as expert
+logits = policy(batch_states)  # shape: [4, 2]
+Π.χ.
+logits =
+[[ 0.3, 0.7],    # προβλέπει πιο πιθανό το action 1
+ [ 1.2, -0.5],   # προβλέπει πιο πιθανό το action 0
+ [ 0.8, 0.4],    # action 0
+ [-0.2, 1.1]]    # action 1
+CORS ENTROPY LOSS:
+ softmax(logits) = [[0.4, 0.6], [0.8, 0.2], [0.6, 0.4], [0.3, 0.7]]
+ p_i=e^z_i/Σe^z_j
+ loss=-1/N Σ log p_i
+'''
 
+
+
+# --- Evaluate Policy (Fixed) ---
 def evaluate_policy(policy, episodes=10):
     rewards = []
     for _ in range(episodes):
@@ -180,7 +193,7 @@ if __name__ == "__main__":
     print(f"Expert average reward: {score}")
     # Train BC
     (bc_states, bc_actions) = train_bc(expert)
-    bc_policy = Policy()
+    bc_policy = Policy() # Initialize policy for BC
     bc_optimizer = optim.Adam(bc_policy.parameters())
     
     bc_states_np = np.array(bc_states, dtype=np.float32)
@@ -191,7 +204,7 @@ if __name__ == "__main__":
         torch.from_numpy(bc_actions_np)
     )
     bc_loader = torch.utils.data.DataLoader(bc_dataset, batch_size=32, shuffle=True)
-    for epoch in range(5):
+    for epoch in range(25):
         for states, actions in bc_loader:
             logits = bc_policy(states)
             loss = nn.CrossEntropyLoss()(logits, actions)
@@ -200,8 +213,8 @@ if __name__ == "__main__":
             bc_optimizer.step()
     
     # Train DAGGER
-    dagger_policy = Policy()
-    dagger_policy, dagger_rewards = train_dagger(expert, dagger_policy, num_iterations=20)
+    dagger_policy = Policy() # Initialize a new policy for DAGGER
+    dagger_policy, dagger_rewards = train_dagger(expert, dagger_policy, num_iterations=25)
 
     # --- Compare ---
     print(f"BC Average Reward: {evaluate_policy(bc_policy, 60)}")

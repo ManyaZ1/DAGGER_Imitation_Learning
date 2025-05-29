@@ -1,0 +1,23 @@
+# --- Create a new conda environment ---
+conda create -n supermario python=3.8
+conda activate supermario
+
+# --- Install core ML libraries ---
+conda install numpy pandas matplotlib scipy
+conda install pytorch torchvision torchaudio -c pytorch
+
+# --- Install OpenAI Gym (the standard RL environment) ---
+pip install gym[classic_control]
+pip install gym[atari]
+
+# --- Install Gym Retro for NES games ---
+pip install gym-retro
+
+# --- Install additional dependencies ---
+pip install opencv-python
+pip install stable-baselines3  # Popular RL library
+pip install pygame  # For visualization
+
+# --- NES Emulator ---
+# Import your Super Mario Bros ROM
+python -m retro.import /path/to/your/SuperMarioBros.nes

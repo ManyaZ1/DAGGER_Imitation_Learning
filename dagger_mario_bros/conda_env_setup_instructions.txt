@@ -14,4 +14,4 @@ pip install nes-py==8.1.8
 pip install gym-super-mario-bros==7.4.0
 
 # --- For CUDA-compatible version of PyTorch ---
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118

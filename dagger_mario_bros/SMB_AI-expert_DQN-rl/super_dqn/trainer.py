@@ -15,10 +15,7 @@ from .env_wrappers import MarioPreprocessor
 class MarioTrainer:
     '''Διαχειριστής εκπαίδευσης για τον Agent Mario AI'''
 
-    def __init__(self,
-                 world:       str = '1',
-                 stage:       str = '1',
-                 action_type: str = 'simple') -> None:
+    def __init__(self, world: str = '1', stage: str = '1', action_type: str = 'simple') -> None:
         # Δημιουργία περιβάλλοντος Gym για συγκεκριμένο επίπεδο
         env_name = f'SuperMarioBros-{world}-{stage}-v0'
         self.env = gym_super_mario_bros.make(env_name)
@@ -54,10 +51,7 @@ class MarioTrainer:
 
         return
     
-    def train(self,
-              episodes:  int = 1000,
-              save_freq: int = 100,
-              render:    bool = False) -> None:
+    def train(self, episodes: int = 1000, save_freq: int = 100, render: bool = False) -> None:
         '''Εκπαίδευση του Mario agent'''
         print(f'Έναρξη εκπαίδευσης για {episodes} επεισόδια...')
         
@@ -108,14 +102,22 @@ class MarioTrainer:
             # Αποθήκευση μοντέλου ανά save_freq επεισόδια
             if episode % save_freq == 0 and episode > 0:
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                save_path = f'models/mario_model_ep{episode}_{timestamp}.pth'
-                os.makedirs('models', exist_ok = True)
+
+                save_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
+                os.makedirs(save_dir, exist_ok = True)
+                save_path = os.path.join(
+                    save_dir, f'mario_model_ep{episode}_{timestamp}.pth'
+                )
+
                 self.agent.save_model(save_path)
         
         # Final save
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        final_save_path = f'models/mario_model_final_{timestamp}.pth'
-        os.makedirs('models', exist_ok=True)
+
+        save_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
+        os.makedirs(save_dir, exist_ok = True)
+        final_save_path = os.path.join(save_dir, f'mario_model_final_{timestamp}.pth')
+
         self.agent.save_model(final_save_path)
         
         # Ζωγραφικηηηηηή!
@@ -124,31 +126,30 @@ class MarioTrainer:
 
         return
     
-    def shape_reward(self,
-                     reward: float,
-                     info:   dict,
-                     done:   bool) -> float:
+    def shape_reward(self, reward: float, info: dict, done: bool) -> float:
         '''Custom reward διαμόρφωση για καλύτερη εκπαίδευση'''
         shaped_reward = reward
         
-        # Encourage moving right
-        if 'x_pos' in info:
-            shaped_reward += info['x_pos'] * 0.01
+        # Θέλουμε να πάει προς τα δεξιά!
+        if 'x_pos' in info and hasattr(self, 'prev_x_pos'):
+            progress         = max(0, info['x_pos'] - self.prev_x_pos)
+            shaped_reward   += progress * 0.1
+            self.prev_x_pos  = info['x_pos']
+
+        # Time-based penalty
+        shaped_reward -= 0.1
         
         # Penalize death
         if done and info.get('life', 3) < 3:
-            shaped_reward -= 50
+            shaped_reward -= 10
         
-        # Bonus for completing level
+        # Bonus για την ολοκλήρωση της πίστας
         if info.get('flag_get', False):
-            shaped_reward += 500
+            shaped_reward += 100
         
         return shaped_reward
     
-    def test(self,
-             model_path: str,
-             episodes: int = 5,
-             render: bool = True) -> list:
+    def test(self, model_path: str, episodes: int = 5, render: bool = True) -> list:
         '''Δοκιμή μοντέλου'''
         self.agent.load_model(model_path)
         self.agent.epsilon = 0  # Όχι exploration κατά το testing!

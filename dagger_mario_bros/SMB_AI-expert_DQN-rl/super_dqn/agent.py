@@ -69,10 +69,10 @@ class MarioAgent:
     def __init__(self,
                  state_shape:   tuple,
                  n_actions:     int,
-                 lr:            float = 1e-4,
+                 lr:            float = 5e-5,
                  epsilon:       float = 1.,
                  epsilon_decay: float = 0.99995,
-                 epsilon_min:   float = 0.1) -> None:
+                 epsilon_min:   float = 0.01) -> None:
         self.state_shape   = state_shape
         self.n_actions     = n_actions
         self.epsilon       = epsilon       # Αρχική πιθανότητα τυχαίας εξερεύνησης

@@ -7,10 +7,7 @@ from collections import deque
 class MarioPreprocessor(gym.Wrapper):
     '''Preprocessing wrapper για το περιβάλλον Mario'''
 
-    def __init__(self,
-                 env:          gym.Env,
-                 stack_frames: int = 4,
-                 skip_frames:  int = 4) -> None:
+    def __init__(self, env: gym.Env, stack_frames: int = 4, skip_frames: int = 4) -> None:
         super().__init__(env)
 
         # Πλήθος καρέ που διατηρούνται στη στοίβα (default: 4)
@@ -34,7 +31,7 @@ class MarioPreprocessor(gym.Wrapper):
 
         return
     
-    def preprocess_frame(self, frame):
+    def preprocess_frame(self, frame: np.ndarray) -> np.ndarray:
         '''Μετατροπή frame σε grayscale και αλλαγή μεγέθους'''
         # Μετατροπή RGB σε grayscale
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -44,7 +41,7 @@ class MarioPreprocessor(gym.Wrapper):
 
         return resized
     
-    def reset(self, **kwargs):
+    def reset(self, **kwargs) -> np.ndarray:
         '''Επαναφορά περιβάλλοντος και αρχικοποίηση stack'''
         obs = self.env.reset(**kwargs)
         
@@ -56,7 +53,7 @@ class MarioPreprocessor(gym.Wrapper):
         
         return np.array(self.frames)
     
-    def step(self, action):
+    def step(self, action: int) -> tuple:
         '''Εκτέλεση action με skip και επιστροφή stack εικόνων'''
 
         total_reward = 0  # Συνολική ανταμοιβή για το action

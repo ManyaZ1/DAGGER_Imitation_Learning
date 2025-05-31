@@ -131,7 +131,7 @@ class MarioAgent:
     def replay(self) -> None:
         '''Εκπαίδευση μοντέλου βάσει batch εμπειριών'''
         if len(self.memory) < self.batch_size:
-            return # Αν δεν υπάρχουν αρκετές εμπειρίες
+            return # Αν δεν υπάρχουν αρκετές 'εμπειρίες'
         
         # Δειγματοληψία batch από το buffer
         batch = random.sample(self.memory, self.batch_size)
@@ -197,8 +197,8 @@ class MarioAgent:
         self.q_network.load_state_dict(checkpoint['q_network_state_dict'])
         self.target_network.load_state_dict(checkpoint['target_network_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        self.epsilon = checkpoint['epsilon']
-        self.scores = checkpoint.get('scores', [])
+        self.epsilon    = checkpoint['epsilon']
+        self.scores     = checkpoint.get('scores', [])
         self.avg_scores = checkpoint.get('avg_scores', [])
         print(f'Το μοντέλο φορτώθηκε από το {filepath}')
 

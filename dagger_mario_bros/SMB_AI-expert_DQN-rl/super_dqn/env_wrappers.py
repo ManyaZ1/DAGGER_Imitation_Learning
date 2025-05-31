@@ -6,6 +6,7 @@ from collections import deque
 # ----- Wrapper για το περιβάλλον του Mario ----- {grayscale, resize, stacking}
 class MarioPreprocessor(gym.Wrapper):
     '''Preprocessing wrapper για το περιβάλλον Mario'''
+
     def __init__(self,
                  env:          gym.Env,
                  stack_frames: int = 4,
@@ -45,12 +46,7 @@ class MarioPreprocessor(gym.Wrapper):
     
     def reset(self, **kwargs):
         '''Επαναφορά περιβάλλοντος και αρχικοποίηση stack'''
-        reset_result = self.env.reset(**kwargs)
-        if isinstance(reset_result, tuple):
-            obs, info = reset_result
-        else:
-            obs = reset_result
-            info = {}
+        obs = self.env.reset(**kwargs)
         
         # Προεπεξεργασία του αρχικού frame
         processed = self.preprocess_frame(obs)
@@ -58,10 +54,7 @@ class MarioPreprocessor(gym.Wrapper):
         for _ in range(self.stack_frames):
             self.frames.append(processed)
         
-        if isinstance(reset_result, tuple):
-            return np.array(self.frames), info
-        else:
-            return np.array(self.frames)
+        return np.array(self.frames)
     
     def step(self, action):
         '''Εκτέλεση action με skip και επιστροφή stack εικόνων'''
@@ -69,24 +62,16 @@ class MarioPreprocessor(gym.Wrapper):
         total_reward = 0  # Συνολική ανταμοιβή για το action
         obs          = None
         done         = False
-        truncated    = False
         info         = {}
 
         # Επαναληπτική εκτέλεση του ίδιου action (frame skipping)
         for _ in range(self.skip_frames):
-            step_result = self.env.step(action)
-
-            # ψηλοέλεγχος ασφάλειας για αντιμετώπιση διαφορετικών εκδόσεων gym!
-            if len(step_result) == 4:
-                obs, reward, done, info = step_result
-                truncated = False
-            else:
-                obs, reward, done, truncated, info = step_result
-
+            obs, reward, done, info = self.env.step(action)
+            
             total_reward += reward
 
             # Αν έχει τελειώσει το επεισόδιο, σταμάτα την επανάληψη!
-            if done or truncated:
+            if done:
                 break
 
         # Προεπεξεργασία τελευταίου frame (μετά από skip)
@@ -97,4 +82,4 @@ class MarioPreprocessor(gym.Wrapper):
 
         # Επιστρέφεται η στοίβα από καρέ, η συνολική ανταμοιβή,
         # και flags για τερματισμό επεισοδίου
-        return np.array(self.frames), total_reward, done, truncated, info
+        return np.array(self.frames), total_reward, done, info

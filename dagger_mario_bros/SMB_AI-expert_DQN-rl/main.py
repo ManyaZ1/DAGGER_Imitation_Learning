@@ -6,7 +6,7 @@ import os
 import warnings
 warnings.filterwarnings('ignore', category = UserWarning, module = 'gym')
 
-def find_latest_model(models_dir='../models', prefix='mario_model_'):
+def find_latest_model(models_dir = 'models', prefix = 'mario_model_'):
     '''Επιστρέφει το πιο πρόσφατο αρχείο μοντέλου με βάση το timestamp στο όνομα.'''
     model_paths = glob.glob(os.path.join(models_dir, f'{prefix}*.pth'))
     if not model_paths:

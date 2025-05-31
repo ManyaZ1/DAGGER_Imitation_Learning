@@ -72,13 +72,15 @@ class MarioAgent:
                  lr:            float = 5e-5,
                  epsilon:       float = 1.,
                  epsilon_decay: float = 0.99995,
-                 epsilon_min:   float = 0.01) -> None:
+                 epsilon_min:   float = 0.01,
+                 gradient_clip: float = 1.) -> None:
         self.state_shape   = state_shape
         self.n_actions     = n_actions
         self.epsilon       = epsilon       # Αρχική πιθανότητα τυχαίας εξερεύνησης
         self.epsilon_decay = epsilon_decay # Ρυθμός μείωσης της πιθανότητας
         self.epsilon_min   = epsilon_min   # Κατώτατο όριο ε
         self.learning_rate = lr
+        self.gradient_clip = gradient_clip # Gradient clipping threshold
         
         # Επιλογή συσκευής (GPU αν υπάρχει κατά προτίμηση)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -101,6 +103,7 @@ class MarioAgent:
         self.avg_scores = []
         
         print(f'Γίνεται χρήση της συσκευής: {self.device}')
+        print(f'Gradient clipping threshold: {self.gradient_clip}')
         print(f'Η αρχιτεκτονική του δικτύου είναι:\n{self.q_network}\n')
 
         return
@@ -161,9 +164,13 @@ class MarioAgent:
         
         loss = F.mse_loss(current_q_values.squeeze(), target_q_values)
         
-        # Backpropagation
+        # Backpropagation με gradient clipping
         self.optimizer.zero_grad()
         loss.backward()
+
+        # Εφαρμόζουμε gradient clipping για να αποφύγουμε exploding gradients!
+        torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), self.gradient_clip)
+
         self.optimizer.step()
         
         # Ενημέρωση του target δικτύου κάθε N {= update_target_freq} βήματα
@@ -184,6 +191,7 @@ class MarioAgent:
             'target_network_state_dict': self.target_network.state_dict(),
             'optimizer_state_dict':      self.optimizer.state_dict(),
             'epsilon':                   self.epsilon,
+            'gradient_clip':             self.gradient_clip,
             'scores':                    self.scores,
             'avg_scores':                self.avg_scores
         }, filepath)
@@ -197,9 +205,10 @@ class MarioAgent:
         self.q_network.load_state_dict(checkpoint['q_network_state_dict'])
         self.target_network.load_state_dict(checkpoint['target_network_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        self.epsilon    = checkpoint['epsilon']
-        self.scores     = checkpoint.get('scores', [])
-        self.avg_scores = checkpoint.get('avg_scores', [])
+        self.epsilon       = checkpoint['epsilon']
+        self.gradient_clip = checkpoint.get('gradient_clip', 1.)
+        self.scores        = checkpoint.get('scores', [])
+        self.avg_scores    = checkpoint.get('avg_scores', [])
         print(f'Το μοντέλο φορτώθηκε από το {filepath}')
 
         return

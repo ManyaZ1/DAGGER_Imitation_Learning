@@ -49,11 +49,17 @@ class MarioTrainer:
         print(f'Number of actions: {n_actions}')
         print(f'Actions:           {actions}')
 
+        self.best_avg_score = float('-inf') # Track best average score
+
         return
     
     def train(self, episodes: int = 1000, save_freq: int = 100, render: bool = False) -> None:
         '''Εκπαίδευση του Mario agent'''
         print(f'Έναρξη εκπαίδευσης για {episodes} επεισόδια...')
+
+        # Dir αποθήκευσης μοντέλων
+        save_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
+        os.makedirs(save_dir, exist_ok = True)
         
         for episode in range(episodes):
             # Επαναφορά περιβάλλοντος και αρχικής κατάστασης
@@ -91,33 +97,29 @@ class MarioTrainer:
             self.agent.scores.append(total_reward)
             avg_score = np.mean(self.agent.scores[-100:])
             self.agent.avg_scores.append(avg_score)
+
+            # Save best model - CHEAT!
+            if avg_score > self.best_avg_score:
+                self.best_avg_score = avg_score
+                best_path = os.path.join(save_dir, 'mario_model_best.pth')
+                self.agent.save_model(best_path)
             
             if episode % 10 == 0:
                 print(f'Episode {episode}/{episodes}')
                 print(f'Score: {total_reward:.2f}, Avg Score: {avg_score:.2f}')
                 print(f'Epsilon: {self.agent.epsilon:.4f}, Steps: {steps}')
-                print(f'World Position: {info.get('x_pos', 0)}')
+                print(f"World Position: {info.get('x_pos', 0)}")
                 print('-' * 50)
             
             # Αποθήκευση μοντέλου ανά save_freq επεισόδια
             if episode % save_freq == 0 and episode > 0:
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-
-                save_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
-                os.makedirs(save_dir, exist_ok = True)
-                save_path = os.path.join(
-                    save_dir, f'mario_model_ep{episode}_{timestamp}.pth'
-                )
-
+                save_path = os.path.join(save_dir, f'mario_model_ep{episode}_{timestamp}.pth')
                 self.agent.save_model(save_path)
         
         # Final save
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-
-        save_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
-        os.makedirs(save_dir, exist_ok = True)
         final_save_path = os.path.join(save_dir, f'mario_model_final_{timestamp}.pth')
-
         self.agent.save_model(final_save_path)
         
         # Ζωγραφικηηηηηή!
@@ -169,7 +171,7 @@ class MarioTrainer:
                     self.env.render()
                 
                 # Action βάσει του εκπαιδευμένου μοντέλου (ΧΩΡΙΣ RANDOM)!
-                action = self.agent.act(state, training=False)
+                action = self.agent.act(state, training = False)
                 next_state, reward, done, info = self.env.step(action)
                 
                 state         = next_state
@@ -181,7 +183,7 @@ class MarioTrainer:
             
             test_scores.append(total_reward)
             print(f'Test Episode {episode + 1}: Score = {total_reward}, Steps = {steps}')
-            print(f'Final Position: {info.get('x_pos', 0)}, Lives: {info.get('life', 3)}')
+            print(f"Final Position: {info.get('x_pos', 0)}, Lives: {info.get('life', 3)}")
         
         avg_test_score = np.mean(test_scores)
         print(f'\nAverage Test Score: {avg_test_score:.2f}')
@@ -210,7 +212,7 @@ class MarioTrainer:
         plt.ylabel('Average Score')
         
         plt.tight_layout()
-        plt.savefig(f'mario_training_progress_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png')
+        plt.savefig(f"mario_training_progress_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
         plt.show()
 
         return

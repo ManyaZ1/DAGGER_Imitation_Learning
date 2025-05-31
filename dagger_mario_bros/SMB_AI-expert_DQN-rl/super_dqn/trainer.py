@@ -9,6 +9,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 
 from .agent import MarioAgent
+from .visual_utils import MarioRenderer
 from .env_wrappers import MarioPreprocessor
 
 # Κλάση που διαχειρίζεται την εκπαίδευση και αξιολόγηση του Mario agent!
@@ -161,6 +162,7 @@ class MarioTrainer:
         
         for episode in range(episodes):
             state = self.env.reset()
+            renderer = MarioRenderer(self.env, scale = 3.)
             
             total_reward = 0
             steps        = 0
@@ -168,7 +170,7 @@ class MarioTrainer:
             
             while not done:
                 if render:
-                    self.env.render()
+                    renderer.render()
                 
                 # Action βάσει του εκπαιδευμένου μοντέλου (ΧΩΡΙΣ RANDOM)!
                 action = self.agent.act(state, training = False)
@@ -188,6 +190,7 @@ class MarioTrainer:
         avg_test_score = np.mean(test_scores)
         print(f'\nAverage Test Score: {avg_test_score:.2f}')
         
+        cv2.destroyAllWindows()
         self.env.close()
 
         return test_scores

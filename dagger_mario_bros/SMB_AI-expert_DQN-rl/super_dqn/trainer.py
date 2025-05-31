@@ -4,6 +4,7 @@ from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, COMPLEX_MOVEMENT, RIGH
 from nes_py.wrappers import JoypadSpace
 
 import os
+import cv2
 import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt

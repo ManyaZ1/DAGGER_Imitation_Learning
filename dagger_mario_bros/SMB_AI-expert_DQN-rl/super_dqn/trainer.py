@@ -8,8 +8,8 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-from agent import MarioAgent
-from env_wrappers import MarioPreprocessor
+from .agent import MarioAgent
+from .env_wrappers import MarioPreprocessor
 
 class MarioTrainer:
     """Training manager for Mario AI"""

@@ -1,4 +1,4 @@
-from super_dqn import MarioTrainer
+from super_dqn.trainer import MarioTrainer
 
 # Γιατί μας τα ζάλιζε ένα gym...
 import warnings

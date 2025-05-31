@@ -23,9 +23,13 @@ def main():
     trainer = MarioTrainer(world = '1', stage = '1', action_type = 'simple')
 
     if user_input == 'train':
-        trainer.train(episodes = 5000, save_freq = 1000, render = False)
+        trainer.train(episodes = 40000, save_freq = 5000, render = False)
     elif user_input == 'test':
-        model_path = find_latest_model()
+        try:
+            model_path = find_latest_model()
+        except:
+            parrent_dir = os.path.dirname(os.path.abspath(__file__))
+            model_path = os.path.join(parrent_dir, 'models', 'mario_model_best.pth')
         trainer.test(model_path, episodes = 3, render = True)
 
     return

@@ -28,7 +28,7 @@ def main():
     elif user_input == 'test':
         try:
             model_path = find_latest_model()
-            1/0
+            # 1/0
         except:
             parrent_dir = os.path.dirname(os.path.abspath(__file__))
             model_path = os.path.join(parrent_dir, 'models', 'mario_model_best.pth')

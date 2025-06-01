@@ -10,14 +10,17 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 
 from .agent import MarioAgent
-from .visual_utils import MarioRenderer
 from .env_wrappers import MarioPreprocessor
+from .visual_utils import MarioRenderer, NESControllerOverlay
 
 # Κλάση που διαχειρίζεται την εκπαίδευση και αξιολόγηση του Mario agent!
 class MarioTrainer:
     '''Διαχειριστής εκπαίδευσης για τον Agent Mario AI'''
 
-    def __init__(self, world: str = '1', stage: str = '1', action_type: str = 'simple') -> None:
+    def __init__(self,
+                 world:       str = '1',
+                 stage:       str = '1',
+                 action_type: str = 'simple') -> None:
         # Δημιουργία περιβάλλοντος Gym για συγκεκριμένο επίπεδο
         env_name = f'SuperMarioBros-{world}-{stage}-v0'
         self.env = gym_super_mario_bros.make(env_name)
@@ -29,6 +32,7 @@ class MarioTrainer:
             actions = COMPLEX_MOVEMENT
         else:
             actions = RIGHT_ONLY
+        self.actions = actions
         
         # Εφαρμογή wrapper NES για περιορισμό ενεργειών!
         # Αναλυτικότερα, ο Mario έχει αρχικά 1 binary action για κάθε
@@ -55,7 +59,10 @@ class MarioTrainer:
 
         return
     
-    def train(self, episodes: int = 1000, save_freq: int = 100, render: bool = False) -> None:
+    def train(self,
+              episodes:  int = 1000,
+              save_freq: int = 100,
+              render:    bool = False) -> None:
         '''Εκπαίδευση του Mario agent'''
         print(f'Έναρξη εκπαίδευσης για {episodes} επεισόδια...')
 
@@ -153,10 +160,15 @@ class MarioTrainer:
         
         return shaped_reward
     
-    def test(self, model_path: str, episodes: int = 5, render: bool = True) -> list:
+    def test(self,
+             model_path:      str,
+             episodes:        int = 5,
+             render:          bool = True,
+             show_controller: bool = False) -> list:
         '''Δοκιμή μοντέλου'''
         self.agent.load_model(model_path)
         self.agent.epsilon = 0  # Όχι exploration κατά το testing!
+        controller_overlay = NESControllerOverlay()
         
         print(f'Δοκιμή μοντέλου για {episodes} επεισόδια...')
         test_scores = []
@@ -175,6 +187,8 @@ class MarioTrainer:
                 
                 # Action βάσει του εκπαιδευμένου μοντέλου (ΧΩΡΙΣ RANDOM)!
                 action = self.agent.act(state, training = False)
+                if show_controller:
+                    controller_overlay.show(self.actions[action])
                 next_state, reward, done, info = self.env.step(action)
                 
                 state         = next_state

@@ -8,7 +8,8 @@ warnings.filterwarnings('ignore', category = UserWarning, module = 'gym')
 
 def find_latest_model(models_dir = 'models', prefix = 'mario_model_'):
     '''Επιστρέφει το πιο πρόσφατο αρχείο μοντέλου με βάση το timestamp στο όνομα.'''
-    model_paths = glob.glob(os.path.join(models_dir, f'{prefix}*.pth'))
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    model_paths = glob.glob(os.path.join(base_dir, models_dir, f'{prefix}*.pth'))
     if not model_paths:
         raise FileNotFoundError(f'No model files found in {models_dir}')
     
@@ -27,10 +28,15 @@ def main():
     elif user_input == 'test':
         try:
             model_path = find_latest_model()
+            1/0
         except:
             parrent_dir = os.path.dirname(os.path.abspath(__file__))
             model_path = os.path.join(parrent_dir, 'models', 'mario_model_best.pth')
-        trainer.test(model_path, episodes = 3, render = True)
+        trainer.test(model_path,
+                     episodes = 1,
+                     render = True,
+                     show_controller = True
+        )
 
     return
 

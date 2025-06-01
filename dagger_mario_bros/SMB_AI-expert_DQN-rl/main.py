@@ -1,4 +1,4 @@
-from super_dqn.trainer import MarioTrainer
+from super_dqn.trainer import EnhancedMarioTrainer
 import glob
 import os
 
@@ -20,7 +20,7 @@ def main():
         print("Παρακαλώ εισάγετε 'train' ή 'test'!")
         return
     
-    trainer = MarioTrainer(world = '1', stage = '1', action_type = 'simple')
+    trainer = EnhancedMarioTrainer(world = '1', stage = '1', action_type = 'simple')
 
     if user_input == 'train':
         trainer.train(episodes = 40000, save_freq = 5000, render = False)

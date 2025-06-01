@@ -2,99 +2,91 @@ import gym
 import gym_super_mario_bros
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, COMPLEX_MOVEMENT, RIGHT_ONLY
 from nes_py.wrappers import JoypadSpace
-
+import cv2
 import os
 import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-from .agent import MarioAgent
+from .agent import EnhancedMarioAgent
 from .visual_utils import MarioRenderer
-from .env_wrappers import MarioPreprocessor
+from .env_wrappers import EnhancedMarioPreprocessor
 
 # Κλάση που διαχειρίζεται την εκπαίδευση και αξιολόγηση του Mario agent!
-class MarioTrainer:
-    '''Διαχειριστής εκπαίδευσης για τον Agent Mario AI'''
-
-    def __init__(self, world: str = '1', stage: str = '1', action_type: str = 'simple') -> None:
-        # Δημιουργία περιβάλλοντος Gym για συγκεκριμένο επίπεδο
+# Usage example modifications for trainer.py:
+class EnhancedMarioTrainer:
+    '''Enhanced trainer that uses structured information'''
+    
+    def __init__(self, world='1', stage='1', action_type='simple'):
+        # Setup environment with enhanced preprocessor
         env_name = f'SuperMarioBros-{world}-{stage}-v0'
         self.env = gym_super_mario_bros.make(env_name)
-        
-        # Action space (οι ενέργειες που μπορεί να εκτελέσει ο Mario!)
+        self.best_avg_score= -np.inf  # Best average score tracker
         if action_type == 'simple':
             actions = SIMPLE_MOVEMENT
         elif action_type == 'complex':
             actions = COMPLEX_MOVEMENT
         else:
             actions = RIGHT_ONLY
-        
-        # Εφαρμογή wrapper NES για περιορισμό ενεργειών!
-        # Αναλυτικότερα, ο Mario έχει αρχικά 1 binary action για κάθε
-        # κουμπί του NES controller! Δηλαδή, υπάρχουν 6 κουμπιά [D-Pad & A, B]
-        # τα οποία μπορούν να πατηθούν ή όχι, δίνοντας 2^6 = 64 actions!
-        # Επομένως, περνάμε μία λίστα από έγκυρους, προκαθορισμένους συνδυασμούς
-        # ενεργειών, με αποτέλεσμα την μείωση του action space.
+            
         self.env = JoypadSpace(self.env, actions)
-
-        # Προσθήκη του custom wrapper μας για preprocessing (resize, grayscale, stack)
-        self.env = MarioPreprocessor(self.env)
+        self.env = EnhancedMarioPreprocessor(self.env)
         
-        # Δημιουργία agent με βάση τα χαρακτηριστικά του περιβάλλοντος
+        # Create enhanced agent
         state_shape = self.env.observation_space.shape
-        n_actions   = self.env.action_space.n
-        self.agent  = MarioAgent(state_shape, n_actions)
+        n_actions = self.env.action_space.n
+        structured_state_size = self.env.structured_state_size
         
-        print(f'Environment:       {env_name}')
-        print(f'State shape:       {state_shape}')
-        print(f'Number of actions: {n_actions}')
-        print(f'Actions:           {actions}')
-
-        self.best_avg_score = float('-inf') # Track best average score
-
-        return
-    
-    def train(self, episodes: int = 1000, save_freq: int = 100, render: bool = False) -> None:
+        self.agent = EnhancedMarioAgent(state_shape, n_actions, structured_state_size)
+        
+    def train(self, episodes=1000, save_freq=100, render=False):
+        '''Enhanced training loop that uses structured information'''
         '''Εκπαίδευση του Mario agent'''
         print(f'Έναρξη εκπαίδευσης για {episodes} επεισόδια...')
 
         # Dir αποθήκευσης μοντέλων
         save_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
         os.makedirs(save_dir, exist_ok = True)
-        
         for episode in range(episodes):
-            # Επαναφορά περιβάλλοντος και αρχικής κατάστασης
             state = self.env.reset()
             
-            total_reward = 0
-            steps        = 0
-            done         = False
+            # Get initial structured state
+            _, _, _, info = self.env.step(0)  # Take a dummy step to get info
+            state = self.env.reset()  # Reset again
+            structured_state = self.env.get_structured_state(info)
             
+            total_reward = 0
+            done = False
+            steps        = 0
             while not done:
                 if render:
                     self.env.render()
                 
-                # Επιλογή action μέσω πολιτικής του agent
-                action = self.agent.act(state)
-
-                # Εκτέλεση action στο περιβάλλον
-                next_state, reward, done, info = self.env.step(action)
+                # Choose action using both visual and structured information
+                action = self.agent.act(state, structured_state)
                 
+                # Execute action
+                next_state, reward, done, info = self.env.step(action)
+                next_structured_state = self.env.get_structured_state(info)
+                
+                # Shape reward using structured information
                 reward = self.shape_reward(reward, info, done)
                 
-                # Αποθήκευση 'εμπειρίας' και μετάβαση στην επόμενη κατάσταση
-                self.agent.remember(state, action, reward, next_state, done)
-                state         = next_state
+                # Store experience with structured information
+                self.agent.remember(state, action, reward, next_state, done, 
+                                  structured_state, next_structured_state)
+                
+                state = next_state
+                structured_state = next_structured_state
                 total_reward += reward
                 steps        += 1
-                
-                # Εκπαίδευση με εμπειρίες (Replay)
+                # Train the agent
                 self.agent.replay()
                 
                 if done:
                     break
             
-            # Καταγραφή score για το επεισόδιο
+                        # Καταγραφή score για το επεισόδιο
             self.agent.scores.append(total_reward)
             avg_score = np.mean(self.agent.scores[-100:])
             self.agent.avg_scores.append(avg_score)

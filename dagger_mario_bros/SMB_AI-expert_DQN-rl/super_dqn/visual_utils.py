@@ -34,6 +34,8 @@ class MarioRenderer:
         return
 
 class NESControllerOverlay:
+    ''' Κλάση για την προβολή ενός overlay του NES controller. '''
+
     def __init__(self) -> None:
         self.image_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -41,7 +43,8 @@ class NESControllerOverlay:
         )
         self.button_radius = 29
 
-        # Default button positions (you can override via argument)
+        # Ορισμός των συντεταγμένων των κουμπιών
+        # της εικόνας του NES controller.
         self.button_coords = {
             'A':      (508, 178),
             'B':      (430, 178),
@@ -55,6 +58,7 @@ class NESControllerOverlay:
         return
 
     def show(self, pressed_buttons: list) -> None:
+        ''' Προβάλλει το overlay του NES controller με τα πατημένα κουμπιά. '''
         overlay = self.base_img.copy()
 
         for btn in pressed_buttons:

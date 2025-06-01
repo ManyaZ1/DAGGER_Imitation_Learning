@@ -3,3 +3,4 @@ dagger_mario_bros/roms/SuperMarioBros.nes
 __pycache__
 colab_test.zip
 /colab_test
+dagger_mario_bros/SMB_AI-expert_DQN-rl/test.py

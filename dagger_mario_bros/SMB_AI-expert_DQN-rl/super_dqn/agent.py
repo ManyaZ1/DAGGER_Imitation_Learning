@@ -9,7 +9,11 @@ from collections import deque
 
 # ----- Ορισμός του νευρωνικού δικτύου DQN -----
 class DQN(nn.Module):
-    '''Deep Q-Network για τον Mario'''
+    '''Deep Q-Network για τον Mario
+    Input shape: (C, H, W) = (4, 84, 84)    # 4 stacked grayscale images
+
+    output of a convolutional layer = floor((input - kernel_size) / stride) + 1
+    '''
 
     def __init__(self, input_shape: tuple, n_actions: int) -> None:
         super(DQN, self).__init__()
@@ -18,7 +22,7 @@ class DQN(nn.Module):
         self.conv = nn.Sequential(
 
             # 1ο συνελικτικό επίπεδο
-            nn.Conv2d(input_shape[0], 32, kernel_size = 8, stride = 4),
+            nn.Conv2d(input_shape[0], 32, kernel_size = 8, stride = 4),  # 32 separate convolution filters, stride 4 to  downscale image,  input_shape[0]=4
             nn.ReLU(),
 
             # 2ο συνελικτικό επίπεδο

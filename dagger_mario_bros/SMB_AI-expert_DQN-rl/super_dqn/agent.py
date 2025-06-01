@@ -23,8 +23,10 @@ class DQN(nn.Module):
 
             # 1ο συνελικτικό επίπεδο
             nn.Conv2d(input_shape[0], 32, kernel_size = 8, stride = 4),  # 32 separate convolution filters, stride 4 to  downscale image,  input_shape[0]=4
-            nn.ReLU(),
-
+            # input (4, 84, 84) → 4 channels => 32 outputs : each output is a (20×20) map
+            nn.ReLU(), # element-wise relu
+            # Shape: (32, 20, 20)
+            
             # 2ο συνελικτικό επίπεδο
             nn.Conv2d(32, 64, kernel_size = 4, stride = 2),
             nn.ReLU(),

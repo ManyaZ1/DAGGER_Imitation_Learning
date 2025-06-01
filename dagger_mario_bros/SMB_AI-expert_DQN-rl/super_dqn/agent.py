@@ -4,6 +4,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 import random
+import warnings
 import numpy as np
 from collections import deque
 
@@ -209,7 +210,12 @@ class MarioAgent:
     
     def load_model(self, filepath: str) -> None:
         '''Φόρτωση εκπαιδευμένου μοντέλου'''
-        checkpoint = torch.load(filepath, map_location=self.device)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                'ignore', category = FutureWarning, message = '.*torch.load.*weights_only.*'
+            )
+            checkpoint = torch.load(filepath, map_location = self.device)
+
         self.q_network.load_state_dict(checkpoint['q_network_state_dict'])
         self.target_network.load_state_dict(checkpoint['target_network_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])

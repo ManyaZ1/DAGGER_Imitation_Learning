@@ -11,7 +11,7 @@ from collections import deque
 class DQN(nn.Module):
     '''Deep Q-Network για τον Mario
     Input shape: (C, H, W) = (4, 84, 84)    # 4 stacked grayscale images
-
+    Output: batch_size, n_actions           # one Q-value per action
     output of a convolutional layer = floor((input - kernel_size) / stride) + 1
     '''
 
@@ -30,10 +30,12 @@ class DQN(nn.Module):
             # 2ο συνελικτικό επίπεδο
             nn.Conv2d(32, 64, kernel_size = 4, stride = 2),
             nn.ReLU(),
-
+            # Shape: (64, 9, 9)
+            
             # 3ο συνελικτικό επίπεδο
             nn.Conv2d(64, 64, kernel_size = 3, stride = 1),
             nn.ReLU()
+            # Shape: (64, 7, 7)
         )
         
         # Υπολογισμός του μεγέθους εξόδου των conv για
@@ -42,7 +44,7 @@ class DQN(nn.Module):
         
         # Fully Connected layers (πολιτική εξόδου Q-τιμών για κάθε ενέργεια)
         self.fc = nn.Sequential(
-            nn.Linear(conv_out_size, 512),
+            nn.Linear(conv_out_size, 512),  #flattened ouptut from convolutional layers as input to 512 neurons
             nn.ReLU(),
 
             # Τελική έξοδος: Q-τιμή για κάθε ενέργεια
@@ -62,9 +64,9 @@ class DQN(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Εκτέλεση forward pass:
         # CNN -> flatten -> Fully Connected -> Q-values
-        conv_out = self.conv(x).view(x.size()[0], -1)
+        conv_out = self.conv(x).view(x.size()[0], -1)  # pass x into convolutional layers and reshape tensor to batch size
 
-        return self.fc(conv_out)
+        return self.fc(conv_out)  #Feed the flattened features into the fully connected layers.
 
 
 

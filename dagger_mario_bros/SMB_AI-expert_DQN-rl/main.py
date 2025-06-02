@@ -16,9 +16,9 @@ def find_latest_model(models_dir = 'models', prefix = 'mario_model_'):
     return max(model_paths, key = os.path.getmtime)
 
 def main():
-    user_input = input('Εκπαίδευση ή Δοκιμή (train/test): ').strip().lower()
-    if user_input not in ['train', 'test']:
-        print("Παρακαλώ εισάγετε 'train' ή 'test'!")
+    user_input = input('Εκπαίδευση ή Δοκιμή (train/test/1st_expert): ').strip().lower()
+    if user_input not in ['train', 'test', '1st_expert']:
+        print("Παρακαλώ εισάγετε 'train' ή 'test' ή '1st_expert'!")
         return
     
     trainer = MarioTrainer(world = '1', stage = '1', action_type = 'simple')
@@ -33,10 +33,14 @@ def main():
         except:
             parrent_dir = os.path.dirname(os.path.abspath(__file__))
             model_path = os.path.join(parrent_dir, 'models', 'mario_model_best.pth')
-        trainer.test(model_path,
-                     episodes = 1,
-                     render = True,
-                     show_controller = True
+        trainer.test(
+            model_path, episodes = 1, render = True, show_controller = True
+        )
+    elif user_input == '1st_expert':
+        parrent_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(parrent_dir, 'models', 'WORKING_MARIO_AGENT.pth')
+        trainer.test(
+            model_path, episodes = 1, render = True, show_controller = True
         )
 
     return

@@ -16,33 +16,39 @@ def find_latest_model(models_dir = 'models', prefix = 'mario_model_'):
     return max(model_paths, key = os.path.getmtime)
 
 def main():
-    user_input = input('Εκπαίδευση ή Δοκιμή (train/test/1st_expert): ').strip().lower()
-    if user_input not in ['train', 'test', '1st_expert']:
-        print("Παρακαλώ εισάγετε 'train' ή 'test' ή '1st_expert'!")
+    choices = ['train', 'test', '1st_expert', '2nd_expert']
+    user_input = input(f'Εκπαίδευση ή Δοκιμή ({"/".join(choices)}): ').strip().lower()
+    if user_input not in choices:
+        print(f'\nΠαρακαλώ εισάγετε: {" ή ".join(choices)}')
+        print('Επιλογή ΜΗ έγκυρη. Τερματισμός προγράμματος...') 
         return
     
     trainer = MarioTrainer(world = '1', stage = '1', action_type = 'simple')
+    parrent_dir = os.path.dirname(os.path.abspath(__file__))
 
     if user_input == 'train':
         trainer.train(episodes = 40000, save_freq = 5000, render = False)
     elif user_input == 'test':
         try:
             model_path = find_latest_model()
-            1/0 # Sorry, but the mario_model_best, is truly
+            # 1/0 # Sorry, but the mario_model_best, is truly
                 # the best model (at least for now...)!!!!!
         except:
-            parrent_dir = os.path.dirname(os.path.abspath(__file__))
             model_path = os.path.join(parrent_dir, 'models', 'mario_model_best.pth')
         trainer.test(
             model_path, episodes = 1, render = True, show_controller = True
         )
     elif user_input == '1st_expert':
-        parrent_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(parrent_dir, 'models', 'WORKING_MARIO_AGENT.pth')
         trainer.test(
             model_path, episodes = 1, render = True, show_controller = True
         )
-
+    elif user_input == '2nd_expert':
+        model_path = os.path.join(parrent_dir, 'models', 'ep30000_MARIO_EXPERT.pth')
+        trainer.test(
+            model_path, episodes = 1, render = True, show_controller = True
+        )
+    
     return
 
 if __name__ == '__main__':

@@ -198,6 +198,9 @@ class DaggerTrainer:
             state         = next_state
             total_reward += reward
             step_count   += 1
+
+            if done: # Πρέπει να γίνει έλγχος αν είναι σωστή συνθήκη!
+                break
         
         # Υπολογισμός expert agreement
         agreement = self._calculate_expert_agreement(learner_actions, expert_actions)

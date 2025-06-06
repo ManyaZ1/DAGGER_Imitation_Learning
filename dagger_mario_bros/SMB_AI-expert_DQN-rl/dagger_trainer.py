@@ -87,7 +87,9 @@ class DaggerTrainer:
         self.save_dir  = os.path.join(
             base_dir, 'models', 'dagger_checkpoints'
         )
-        self.plots_dir = os.path.join(base_dir, 'plots')
+        self.plots_dir = os.path.join(
+            base_dir, 'models', 'dagger_checkpoints', 'plots'
+        )
 
         os.makedirs(self.save_dir,  exist_ok = True)
         os.makedirs(self.plots_dir, exist_ok = True)

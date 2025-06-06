@@ -48,7 +48,20 @@ class DaggerMarioAgent(MarioAgent):
             expert_action: Action του expert για το συγκεκριμένο state
             *args:         Παράμετροι που αγνοούνται, αφού DAGGER!
         '''
-        self.dagger_memory.append((state, expert_action))
+        with torch.no_grad():
+            state_tensor     = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+            action_logits    = self.q_network(state_tensor)
+            predicted_action = action_logits.argmax(dim = 1).item()
+
+        if predicted_action != expert_action:
+            # Κανονικά, θα έπρεπε να τα κρατάμε όλα βάση του κλασικού DAGGER,
+            # όμως, για να κάνουμε το learning πιο αποδοτικό, δίνουμε έμφαση
+            # στο όταν γίνεται πατάτα!
+            self.dagger_memory.append((state, expert_action))
+        else:
+            # Κράτησε και κάποια εύκολα
+            if random.random() < 0.1:
+                self.dagger_memory.append((state, expert_action))
 
         return
         
@@ -102,11 +115,33 @@ class DaggerMarioAgent(MarioAgent):
             action_logits = self.q_network(state_tensor)
             
             if training: # Θέλουμε exploration!
-                action_probs = F.softmax(action_logits, dim=1)
+                action_probs = F.softmax(action_logits, dim = 1)
                 action       = torch.multinomial(action_probs, 1).item()
             else: # Greedy policy
                 action = action_logits.argmax().item()
         
+        return action
+    
+    def act_agreement_based(self, state: np.ndarray, agreement_rate: float) -> int:
+        ''' Exploration βάση το expert agreement. '''
+        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+        
+        with torch.no_grad():
+            action_logits = self.q_network(state_tensor)
+            
+            # High disagreement -> more exploration
+            # High agreement    -> more exploitation
+            if agreement_rate < 0.7:   # Low agreement, explore more
+                temperature = 1.5
+                temp_logits = action_logits / temperature
+                action_probs = F.softmax(temp_logits, dim=1)
+                action = torch.multinomial(action_probs, 1).item()
+            elif agreement_rate < 0.9: # Medium agreement, balanced
+                action_probs = F.softmax(action_logits, dim=1)
+                action = torch.multinomial(action_probs, 1).item()
+            else:                      # High agreement, exploit
+                action = action_logits.argmax().item()
+                
         return action
     
     def save_model(self, filepath: str) -> None:

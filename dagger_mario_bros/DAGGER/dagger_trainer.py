@@ -93,14 +93,9 @@ class DaggerTrainer:
     def _setup_directories(self):
         ''' Δημιουργία των απαραίτητων dirs '''
         self.save_dir  = os.path.join(
-            base_dir, 'models', 'dagger_checkpoints'
+            base_dir, 'models_dagger'
         )
-        self.plots_dir = os.path.join(
-            base_dir, 'models', 'dagger_checkpoints', 'plots'
-        )
-
         os.makedirs(self.save_dir,  exist_ok = True)
-        os.makedirs(self.plots_dir, exist_ok = True)
 
         return
     
@@ -146,8 +141,17 @@ class DaggerTrainer:
             if self.config.render:
                 self.renderer.render()
             
-            # Ενέργειες από τον learner και τον expert
-            learner_action = self.learner.act(state)
+            # --- Ενέργειες από τον learner και τον expert ---
+            if self.expert_agreement_window:
+                avg_agreement = sum(
+                    self.expert_agreement_window) / len(self.expert_agreement_window
+                )
+            else:
+                avg_agreement = 1. # Initially use full expert
+            learner_action = self.learner.act_agreement_based(
+                state, agreement_rate = avg_agreement
+            )
+            'learner_action = self.learner.act(state) # Original action selection'
             expert_action  = self.expert.act(state, training = False)
             
             # Διατήρηση των ενεργειών για agreement calculation!
@@ -192,7 +196,6 @@ class DaggerTrainer:
         total_loss  = 0.
         batch_count = 0
         
-        print(f'Εκπαίδευση learner για επανάληψη {iteration+1}')
         for batch in range(self.config.training_batches_per_iter):
             loss = self.learner.replay()
             if loss is not None:
@@ -307,17 +310,18 @@ class DaggerTrainer:
 def main():
     config = DaggerConfig(
         iterations                = 100,
-        episodes_per_iter         = 3,
-        training_batches_per_iter = 25,
+        episodes_per_iter         = 10,
+        training_batches_per_iter = 100,
         expert_model_path= os.path.join(
-            base_dir, '..', 'expert-SMB_DQN', 'models', 'WORKING_MARIO_AGENT.pth'
+            base_dir, '..',
+            'expert-SMB_DQN', 'models', 'ep30000_MARIO_EXPERT.pth'
         ),
         world                    = '1',
         stage                    = '1',
         render                   = False,
         save_frequency           = 25,
         early_stopping_threshold = 0.9,
-        max_episode_steps        = 5000,
+        max_episode_steps        = 800, # Στα 300 κάπου τερματίζεται η πίστα!
     )
     
     trainer = DaggerTrainer(config)

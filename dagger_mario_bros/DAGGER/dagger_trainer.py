@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 from datetime import datetime
 from typing import Dict, List
@@ -7,9 +8,16 @@ import json
 import matplotlib.pyplot as plt
 from collections import deque
 
-from super_dqn.agent import MarioAgent
-from super_dqn.env_wrappers import MarioPreprocessor
-from super_dqn.visual_utils import MarioRenderer
+base_dir = os.path.dirname(__file__)
+temp = os.path.abspath(
+    os.path.join(base_dir, '..', 'expert-SMB_DQN', 'super_dqn')
+)
+sys.path.append(temp)
+from agent import MarioAgent
+from env_wrappers import MarioPreprocessor
+from visual_utils import MarioRenderer
+from dagger_agent import DaggerMarioAgent
+
 import gym_super_mario_bros
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 from nes_py.wrappers import JoypadSpace
@@ -71,7 +79,7 @@ class DaggerTrainer:
         ''' Αρχικοποίηση του expert και learner agent '''
         # Οι agent μας
         self.expert  = MarioAgent(self.state_shape, self.n_actions)
-        self.learner = MarioAgent(self.state_shape, self.n_actions)
+        self.learner = DaggerMarioAgent(self.state_shape, self.n_actions)
         
         # Φόρτωση του expert μοντέλου
         self.expert.load_model(self.config.expert_model_path)
@@ -302,7 +310,7 @@ def main():
         episodes_per_iter         = 3,
         training_batches_per_iter = 25,
         expert_model_path= os.path.join(
-            base_dir, 'models', 'WORKING_MARIO_AGENT.pth'
+            base_dir, '..', 'expert-SMB_DQN', 'models', 'WORKING_MARIO_AGENT.pth'
         ),
         world                    = '1',
         stage                    = '1',
@@ -313,9 +321,7 @@ def main():
     )
     
     trainer = DaggerTrainer(config)
-    results = trainer.train()
-    
-    print(f'\nTraining Results: {results}')
+    trainer.train()
 
     return
 

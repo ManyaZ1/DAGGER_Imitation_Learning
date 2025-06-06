@@ -27,7 +27,7 @@ def main():
     parrent_dir = os.path.dirname(os.path.abspath(__file__))
 
     if user_input == 'train':
-        trainer.train(episodes = 40000, save_freq = 5000, render = False)
+        trainer.train(episodes = 30000, save_freq = 5000, render = False)
     elif user_input == 'test':
         try:
             model_path = find_latest_model()

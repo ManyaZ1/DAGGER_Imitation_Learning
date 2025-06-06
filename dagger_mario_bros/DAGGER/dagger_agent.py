@@ -48,20 +48,7 @@ class DaggerMarioAgent(MarioAgent):
             expert_action: Action του expert για το συγκεκριμένο state
             *args:         Παράμετροι που αγνοούνται, αφού DAGGER!
         '''
-        with torch.no_grad():
-            state_tensor     = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-            action_logits    = self.q_network(state_tensor)
-            predicted_action = action_logits.argmax(dim = 1).item()
-
-        if predicted_action != expert_action:
-            # Κανονικά, θα έπρεπε να τα κρατάμε όλα βάση του κλασικού DAGGER,
-            # όμως, για να κάνουμε το learning πιο αποδοτικό, δίνουμε έμφαση
-            # στο όταν γίνεται πατάτα!
-            self.dagger_memory.append((state, expert_action))
-        else:
-            # Κράτησε και κάποια εύκολα
-            if random.random() < 0.1:
-                self.dagger_memory.append((state, expert_action))
+        self.dagger_memory.append((state, expert_action))
 
         return
         

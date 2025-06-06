@@ -116,12 +116,6 @@ class MarioTrainer:
             self.agent.scores.append(total_reward)
             avg_score = np.mean(self.agent.scores[-100:])
             self.agent.avg_scores.append(avg_score)
-
-            # Save best model - CHEAT!
-            if avg_score > self.best_avg_score:
-                self.best_avg_score = avg_score
-                best_path = os.path.join(save_dir, 'mario_model_best.pth')
-                self.agent.save_model(best_path)
             
             if episode % 10 == 0:
                 print(f'Episode {episode}/{episodes}')
@@ -135,6 +129,7 @@ class MarioTrainer:
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 save_path = os.path.join(save_dir, f'mario_model_ep{episode}_{timestamp}.pth')
                 self.agent.save_model(save_path)
+                print(f'Best Average Score so far: {self.best_avg_score:.2f}')
         
         # Final save
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

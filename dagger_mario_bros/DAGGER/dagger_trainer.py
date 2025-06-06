@@ -308,7 +308,7 @@ class DaggerTrainer:
             print(f'Iteration {iteration+1} Summary:')
             print(f'  Average Reward:    {avg_reward:.2f}')
             print(f'  Average Agreement: {avg_agreement:.3f}')
-            print(f'  Best iter Reward:  {max(iteration_rewards):.2f}')
+            print(f'  Best Iter Reward:  {max(iteration_rewards):.2f}')
 
             # Εκπαίδευση του learner agent με τα δεδομένα της επανάληψης
             avg_loss = self._train_learner(iteration)

@@ -20,7 +20,8 @@ class MarioTrainer:
     def __init__(self,
                  world:       str = '1',
                  stage:       str = '1',
-                 action_type: str = 'simple') -> None:
+                 action_type: str = 'simple',
+                 max_steps:   int = 1000) -> None:
         # Δημιουργία περιβάλλοντος Gym για συγκεκριμένο επίπεδο
         env_name = f'SuperMarioBros-{world}-{stage}-v0'
         self.env = gym_super_mario_bros.make(env_name)
@@ -55,7 +56,8 @@ class MarioTrainer:
         print(f'Number of actions: {n_actions}')
         print(f'Actions:           {actions}')
 
-        self.best_avg_score = float('-inf') # Track best average score
+        self.best_avg_score    = float('-inf') # Track best average score
+        self.max_episode_steps = max_steps # Μέγιστο πλήθος βημάτων ανά επεισόδιο
 
         return
     
@@ -79,7 +81,7 @@ class MarioTrainer:
             steps        = 0
             done         = False
             
-            while not done:
+            while not done and steps < self.max_episode_steps:
                 if render:
                     self.env.render()
                 

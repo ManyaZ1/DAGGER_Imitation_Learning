@@ -107,7 +107,7 @@ class MarioTrainer:
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     model_path = os.path.join(
                         save_dir,
-                        f'mario_model_FLAG_ep{episode}_{timestamp}.pth'
+                        f'mario_model_FLAG_ep{episode}_{int(total_reward)}_{timestamp}.pth'
                     )
                     self.agent.save_model(model_path)
                     print(f'Model που τερμάτισε: {model_path}')

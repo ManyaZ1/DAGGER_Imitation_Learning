@@ -290,7 +290,7 @@ class DaggerTrainer:
                 self.metrics['episode_lengths'].append(episode_info['steps'])
 
                 if episode_info['flag_get']:
-                    # Save model that completed the level
+                    # Αποθήκευση μοντέλου όταν ολοκληρώσει το επίπεδο!!!
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     flag_model_path = os.path.join(
                         self.save_dir,

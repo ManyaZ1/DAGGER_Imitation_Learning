@@ -11,8 +11,8 @@ from collections import deque
 # ----- Ορισμός του νευρωνικού δικτύου DQN -----
 class DQN(nn.Module):
     '''Deep Q-Network για τον Mario
-    Input shape: (C, H, W) = (4, 84, 84)    # 4 stacked grayscale images
-    Output: batch_size, n_actions           # one Q-value per action
+    Input shape: (C, H, W) = (4, 84, 84) # 4 stacked grayscale images
+    Output: batch_size, n_actions        # one Q-value per action
     output of a convolutional layer = floor((input - kernel_size) / stride) + 1
     '''
 
@@ -23,7 +23,8 @@ class DQN(nn.Module):
         self.conv = nn.Sequential(
 
             # 1ο συνελικτικό επίπεδο
-            nn.Conv2d(input_shape[0], 32, kernel_size = 8, stride = 4),  # 32 separate convolution filters, stride 4 to  downscale image,  input_shape[0]=4
+            # 32 separate convolution filters, stride 4 to downscale image, input_shape[0] = 4
+            nn.Conv2d(input_shape[0], 32, kernel_size = 8, stride = 4),
             # input (4, 84, 84) → 4 channels => 32 outputs : each output is a (20×20) map
             nn.ReLU(), # element-wise relu
             # Shape: (32, 20, 20)
@@ -43,12 +44,13 @@ class DQN(nn.Module):
         # σύνδεση με το πλήρως συνδεδεμένο δίκτυο!
         conv_out_size = self._get_conv_out(input_shape)
         
-        # Fully Connected layers (πολιτική εξόδου Q-τιμών για κάθε ενέργεια)
+        # Fully Connected layers (πολιτική εξόδου Q-τιμών για κάθε action)
         self.fc = nn.Sequential(
-            nn.Linear(conv_out_size, 512),  #flattened ouptut from convolutional layers as input to 512 neurons
+            # flattened output from convolutional layers as input to 512 neurons
+            nn.Linear(conv_out_size, 512),
             nn.ReLU(),
 
-            # Τελική έξοδος: Q-τιμή για κάθε ενέργεια
+            # Τελική έξοδος: Q-τιμή για κάθε action
             nn.Linear(512, n_actions)
         )
 
@@ -65,9 +67,11 @@ class DQN(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Εκτέλεση forward pass:
         # CNN -> flatten -> Fully Connected -> Q-values
-        conv_out = self.conv(x).view(x.size()[0], -1)  # pass x into convolutional layers and reshape tensor to batch size
+        # pass x into convolutional layers and reshape tensor to batch size
+        conv_out = self.conv(x).view(x.size()[0], -1)
 
-        return self.fc(conv_out)  #Feed the flattened features into the fully connected layers.
+        # Feed the flattened features into the fully connected layers.
+        return self.fc(conv_out)
 
 
 
@@ -129,12 +133,12 @@ class MarioAgent:
         return
     
     def act(self, state: np.ndarray, training: bool = True) -> int:
-        '''Επιλογή ενέργειας με χρήση πολιτικής epsilon-greedy'''
+        '''Επιλογή action με χρήση πολιτικής epsilon-greedy'''
         if training and random.random() <= self.epsilon:
-            # Τυχαία ενέργεια (exploration)
+            # Τυχαίο action (exploration)
             return random.choice(range(self.n_actions))
         
-        # Αλλιώς, επιλέγει την καλύτερη ενέργεια βάσει Q-τιμών (exploitation)
+        # Αλλιώς, επιλέγει την καλύτερη action βάσει Q-τιμών (exploitation)
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         q_values = self.q_network(state_tensor)
 
@@ -191,7 +195,7 @@ class MarioAgent:
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
         
-        return
+        return loss.item()
     
     def save_model(self, filepath: str) -> None:
         '''Αποθήκευση του εκπαιδευμένου μοντέλου'''

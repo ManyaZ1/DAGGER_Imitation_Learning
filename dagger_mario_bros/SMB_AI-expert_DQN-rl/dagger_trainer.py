@@ -192,7 +192,7 @@ class DaggerTrainer:
                 batch_count += 1
                 
         avg_loss = total_loss / max(batch_count, 1)
-        print(f"Μέσος όρος loss εκπαίδευσης: {avg_loss:.6f}")
+        print(f'Μέσος όρος loss εκπαίδευσης: {avg_loss:.6f}')
 
         return avg_loss
     
@@ -225,7 +225,7 @@ class DaggerTrainer:
         recent_agreement = np.mean(list(self.expert_agreement_window)[-50:])
         
         if recent_agreement >= self.config.early_stopping_threshold:
-            print(f"Early stopping! Agreement rate: {recent_agreement:.3f}")
+            print(f'Early stopping! Agreement rate: {recent_agreement:.3f}')
             return True
         
         return False
@@ -258,10 +258,10 @@ class DaggerTrainer:
             
             self.metrics['iteration_rewards'].append(avg_reward)
             
-            print(f"Iteration {iteration+1} Summary:")
-            print(f"  Average Reward:     {avg_reward:.2f}")
-            print(f"  Average Agreement:  {avg_agreement:.3f}")
-            print(f"  Best Reward So Far: {max(iteration_rewards):.2f}")
+            print(f'Iteration {iteration+1} Summary:')
+            print(f'  Average Reward:     {avg_reward:.2f}')
+            print(f'  Average Agreement:  {avg_agreement:.3f}')
+            print(f'  Best Reward So Far: {max(iteration_rewards):.2f}')
 
             # Εκπαίδευση του learner agent με τα δεδομένα της επανάληψης
             avg_loss = self._train_learner(iteration)
@@ -285,9 +285,9 @@ class DaggerTrainer:
                 break
         
         # Τελική αναφορά αποτελεσμάτων
-        print(f"Best Average Reward: {self.best_reward:.2f}")
-        print(f"Final Expert Agreement: {np.mean(list(self.expert_agreement_window)[-10:]):.3f}")
-        print(f"Best Model: {best_model_path}")
+        print(f'Best Average Reward: {self.best_reward:.2f}')
+        print(f'Final Expert Agreement: {np.mean(list(self.expert_agreement_window)[-10:]):.3f}')
+        print(f'Best Model: {best_model_path}')
 
         return {
             'best_reward': self.best_reward,
@@ -315,7 +315,7 @@ def main():
     trainer = DaggerTrainer(config)
     results = trainer.train()
     
-    print(f"\nTraining Results: {results}")
+    print(f'\nTraining Results: {results}')
 
     return
 

@@ -70,18 +70,20 @@ class DaggerTrainer:
         self.state_shape = self.env.observation_space.shape
         self.n_actions   = self.env.action_space.n
         
-        print(f'State shape: {self.state_shape}, Actions: {self.n_actions}')
+        print(f'State shape: {self.state_shape} - Actions: {self.n_actions}')
 
         return
     
     def _setup_agents(self):
         ''' Αρχικοποίηση του expert και learner agent '''
         # Οι agent μας
+        print('\nExpert:')
         self.expert  = MarioAgent(self.state_shape, self.n_actions)
-        self.learner = DaggerMarioAgent(self.state_shape, self.n_actions)
-        
         # Φόρτωση του expert μοντέλου
         self.expert.load_model(self.config.expert_model_path)
+
+        print('\nLearner/DAGGER:')
+        self.learner = DaggerMarioAgent(self.state_shape, self.n_actions)
         
         # Οπτικοποίηση αν ζητηθεί
         if self.config.render:
@@ -209,10 +211,11 @@ class DaggerTrainer:
             'flag_get':    info.get('flag_get', False)
         }
         
-        print(
-            f'Episode {episode + 1}: Reward={total_reward:.2f}, '
-            f'Steps={step_count}, Agreement={agreement:.3f}, '
-            f'X-pos={info.get("x_pos", 0)}'
+        print(f'[Episode {episode + 1:03}] '
+              f'Reward: {total_reward:8.2f} | '
+              f'Steps: {step_count:4} | '
+              f'Agreement: {agreement:.3f} | '
+              f'X-pos: {info.get("x_pos", 0):4}'
         )
         
         return episode_info
@@ -269,7 +272,7 @@ class DaggerTrainer:
     
     def train(self) -> Dict:
         '''Βασική συνάρτηση/loop εκπαίδευσης DAGGER.'''
-        print('\nΕνάρξη εκπαίδευσης DAGGER για Mario AI agent...')
+        print('-> Ενάρξη εκπαίδευσης DAGGER για Mario AI agent...')
 
         best_model_path = None
         for iteration in range(self.config.iterations):

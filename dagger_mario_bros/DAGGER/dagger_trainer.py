@@ -283,18 +283,19 @@ class DaggerTrainer:
                 episode_info = self._run_episode(iteration, episode)
                 
                 # Στατιστικά
-                iteration_rewards.append(episode_info['reward'])
+                reward_temp = episode_info['reward']
+                iteration_rewards.append(reward_temp)
                 iteration_agreements.append(episode_info['agreement'])
-                self.metrics['episode_rewards'].append(episode_info['reward'])
+                self.metrics['episode_rewards'].append(reward_temp)
                 self.metrics['expert_agreement'].append(episode_info['agreement'])
                 self.metrics['episode_lengths'].append(episode_info['steps'])
 
-                if episode_info['flag_get']:
+                if episode_info['flag_get'] and reward_temp > 3440:
                     # Αποθήκευση μοντέλου όταν ολοκληρώσει το επίπεδο!!!
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     flag_model_path = os.path.join(
                         self.save_dir,
-                        f'mario_flag_model_iter{iteration+1}_ep{episode+1}_{timestamp}.pth'
+                        f'mario_model_FLAG_iter{iteration+1}_{int(reward_temp)}_{timestamp}.pth'
                     )
                     self.learner.save_model(flag_model_path)
                     print(f'Το επίπεδο ολοκληρώθηκε! Μοντέλο: {flag_model_path}')

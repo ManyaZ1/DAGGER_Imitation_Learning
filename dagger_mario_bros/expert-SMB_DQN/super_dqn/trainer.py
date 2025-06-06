@@ -105,7 +105,7 @@ class MarioTrainer:
                 if done:
                     break
 
-                if info.get('flag_get', False) and total_reward > 3125: # 3125 βάση δοκιμών!
+                if info.get('flag_get', False) and total_reward > 3440: # 3440 βάση δοκιμών!
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     model_path = os.path.join(
                         save_dir,

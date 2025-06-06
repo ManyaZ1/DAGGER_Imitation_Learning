@@ -205,7 +205,8 @@ class DaggerTrainer:
             'reward':      total_reward,
             'steps':       step_count,
             'agreement':   agreement,
-            'final_x_pos': info.get('x_pos', 0)
+            'final_x_pos': info.get('x_pos', 0),
+            'flag_get':    info.get('flag_get', False)
         }
         
         print(
@@ -287,6 +288,16 @@ class DaggerTrainer:
                 self.metrics['episode_rewards'].append(episode_info['reward'])
                 self.metrics['expert_agreement'].append(episode_info['agreement'])
                 self.metrics['episode_lengths'].append(episode_info['steps'])
+
+                if episode_info['flag_get']:
+                    # Save model that completed the level
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    flag_model_path = os.path.join(
+                        self.save_dir,
+                        f'mario_flag_model_iter{iteration+1}_ep{episode+1}_{timestamp}.pth'
+                    )
+                    self.learner.save_model(flag_model_path)
+                    print(f'Το επίπεδο ολοκληρώθηκε! Μοντέλο: {flag_model_path}')
             
             # Στατιστικά για την τρέχουσα επανάληψη
             avg_reward    = np.mean(iteration_rewards)

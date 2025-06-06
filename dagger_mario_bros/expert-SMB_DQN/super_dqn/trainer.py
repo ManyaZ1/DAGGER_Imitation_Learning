@@ -102,6 +102,15 @@ class MarioTrainer:
                 
                 if done:
                     break
+
+                if info.get('flag_get', False) and total_reward > 3125: # 3125 βάση δοκιμών!
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    model_path = os.path.join(
+                        save_dir,
+                        f'mario_model_FLAG_ep{episode}_{timestamp}.pth'
+                    )
+                    self.agent.save_model(model_path)
+                    print(f'Model που τερμάτισε: {model_path}')
             
             # Καταγραφή score για το επεισόδιο
             self.agent.scores.append(total_reward)

@@ -16,7 +16,7 @@ def find_latest_model(models_dir = 'models', prefix = 'mario_model_'):
     return max(model_paths, key = os.path.getmtime)
 
 def main():
-    choices = ['train', 'test', '1st_expert', '2nd_expert']
+    choices = ['train', 'test', '1st_expert', '2nd_expert', 'dagger']
     user_input = input(f'Εκπαίδευση ή Δοκιμή ({"/".join(choices)}): ').strip().lower()
     if user_input not in choices:
         print(f'\nΠαρακαλώ εισάγετε: {" ή ".join(choices)}')
@@ -45,6 +45,14 @@ def main():
         )
     elif user_input == '2nd_expert':
         model_path = os.path.join(parrent_dir, 'models', 'ep30000_MARIO_EXPERT.pth')
+        trainer.test(
+            model_path, episodes = 1, render = True, show_controller = True
+        )
+    elif user_input == 'dagger':
+        model_path = os.path.join(
+            parrent_dir, '..', 'DAGGER', 'models_dagger',
+            'mario_model_FLAG_iter82_3430_20250607_022450.pth'
+        )
         trainer.test(
             model_path, episodes = 1, render = True, show_controller = True
         )

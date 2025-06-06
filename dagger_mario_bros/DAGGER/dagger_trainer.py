@@ -293,7 +293,7 @@ class DaggerTrainer:
                 self.metrics['expert_agreement'].append(episode_info['agreement'])
                 self.metrics['episode_lengths'].append(episode_info['steps'])
 
-                if episode_info['flag_get'] and reward_temp > 3440:
+                if episode_info['flag_get'] and reward_temp > 3420: # 3420 βάση δοκιμών!
                     # Αποθήκευση μοντέλου όταν ολοκληρώσει το επίπεδο!!!
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     flag_model_path = os.path.join(

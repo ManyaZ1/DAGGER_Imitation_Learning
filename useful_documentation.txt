@@ -1,4 +1,0 @@
-cartpole gym doc: https://www.gymlibrary.dev/environments/classic_control/cart_pole/
-Paper 1: https://proceedings.mlr.press/v15/ross11a/ross11a.pdf
-Paper 2: https://arxiv.org/pdf/2010.11251
-Intro to DAgger ppt: https://shuijing725.github.io/files/20190926_DAgger.pdf

@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Dict, List
 from dataclasses import dataclass
 import json
-import matplotlib.pyplot as plt
 from collections import deque
 
 base_dir = os.path.dirname(__file__)
@@ -121,15 +120,43 @@ class DaggerTrainer:
                                     expert_actions:  List[int]) -> float:
         ''' Υπολογισμός του agreement rate μεταξύ των ενεργειών learner & expert '''
         if not learner_actions or not expert_actions:
-            return 0.;
+            return 0.
         
         agreements = sum(1 for la, ea in zip(learner_actions, expert_actions) if la == ea)
         
         return agreements / len(learner_actions)
     
+    def _shape_reward(self, reward: float, info: dict, done: bool) -> float:
+        '''
+        Custom reward διαμόρφωση για καλύτερη
+        εκπαίδευση - copy/paste από trainer.py
+        '''
+        shaped_reward = reward
+        
+        # Θέλουμε να πάει προς τα δεξιά!
+        x_pos = info.get('x_pos')
+        if x_pos is not None:
+            progress        = max(0, x_pos - self.prev_x_pos)
+            shaped_reward  += progress * 0.1
+            self.prev_x_pos = x_pos
+
+        # Time-based penalty
+        shaped_reward -= 0.1
+        
+        # Penalize death
+        if done and info.get('life', 3) < 3:
+            shaped_reward -= 10
+        
+        # Bonus για την ολοκλήρωση της πίστας
+        if info.get('flag_get', False):
+            shaped_reward += 100
+        
+        return shaped_reward
+    
     def _run_episode(self, iteration: int, episode: int) -> Dict:
         ''' Τρέχει 1 επεισόδιο και συλλέγει δεδομένα '''
         state = self.env.reset()
+        self.prev_x_pos = 40 # Αρχική θέση Mario
 
         done            = False
         total_reward    = 0
@@ -160,6 +187,7 @@ class DaggerTrainer:
             
             # Εκτέλεση της ενέργειας του learner στο περιβάλλον
             next_state, reward, done, info = self.env.step(learner_action)
+            reward = self._shape_reward(reward, info, done)
             
             # Θυμήσου την αλληλεπίδραση expert-περιβάλλοντος, δηλαδή:
             # Expert provides correct labels for those states
@@ -168,9 +196,6 @@ class DaggerTrainer:
             state         = next_state
             total_reward += reward
             step_count   += 1
-            
-            if info.get('life', 2) < 2: # Mario died
-                break
         
         # Υπολογισμός expert agreement
         agreement = self._calculate_expert_agreement(learner_actions, expert_actions)
@@ -270,9 +295,9 @@ class DaggerTrainer:
             self.metrics['iteration_rewards'].append(avg_reward)
             
             print(f'Iteration {iteration+1} Summary:')
-            print(f'  Average Reward:     {avg_reward:.2f}')
-            print(f'  Average Agreement:  {avg_agreement:.3f}')
-            print(f'  Best Reward So Far: {max(iteration_rewards):.2f}')
+            print(f'  Average Reward:    {avg_reward:.2f}')
+            print(f'  Average Agreement: {avg_agreement:.3f}')
+            print(f'  Best iter Reward:  {max(iteration_rewards):.2f}')
 
             # Εκπαίδευση του learner agent με τα δεδομένα της επανάληψης
             avg_loss = self._train_learner(iteration)
@@ -311,7 +336,7 @@ def main():
     config = DaggerConfig(
         iterations                = 100,
         episodes_per_iter         = 10,
-        training_batches_per_iter = 100,
+        training_batches_per_iter = 300,
         expert_model_path= os.path.join(
             base_dir, '..',
             'expert-SMB_DQN', 'models', 'ep30000_MARIO_EXPERT.pth'

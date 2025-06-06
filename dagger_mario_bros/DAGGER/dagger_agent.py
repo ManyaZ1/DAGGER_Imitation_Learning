@@ -29,7 +29,7 @@ class DaggerMarioAgent(MarioAgent):
         super().__init__(*args, **kwargs)
         
         # DAGGER μνήμη για ζεύγη (state, expert_action)
-        self.dagger_memory = deque(maxlen = 50000)
+        self.dagger_memory = deque(maxlen = 100000)
         
         # Ξεχωριστός optimizer για supervised learning (x2 learning rate)
         self.dagger_optimizer = optim.Adam(

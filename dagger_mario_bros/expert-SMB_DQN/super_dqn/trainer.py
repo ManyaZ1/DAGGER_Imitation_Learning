@@ -73,6 +73,7 @@ class MarioTrainer:
         for episode in range(episodes):
             # Επαναφορά περιβάλλοντος και αρχικής κατάστασης
             state = self.env.reset()
+            self.prev_x_pos = 40 # Βάση δοκιμών, ο Mario ξεκινάει από x = 40!
             
             total_reward = 0
             steps        = 0
@@ -142,10 +143,11 @@ class MarioTrainer:
         shaped_reward = reward
         
         # Θέλουμε να πάει προς τα δεξιά!
-        if 'x_pos' in info and hasattr(self, 'prev_x_pos'):
-            progress         = max(0, info['x_pos'] - self.prev_x_pos)
-            shaped_reward   += progress * 0.1
-            self.prev_x_pos  = info['x_pos']
+        x_pos = info.get('x_pos')
+        if x_pos is not None:
+            progress        = max(0, x_pos - self.prev_x_pos)
+            shaped_reward  += progress * 0.1
+            self.prev_x_pos = x_pos
 
         # Time-based penalty
         shaped_reward -= 0.1
@@ -175,6 +177,7 @@ class MarioTrainer:
         
         for episode in range(episodes):
             state = self.env.reset()
+            self.prev_x_pos = 40
             renderer = MarioRenderer(self.env, scale = 3.)
             
             total_reward = 0

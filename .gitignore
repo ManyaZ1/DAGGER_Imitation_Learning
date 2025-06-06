@@ -1,3 +1,6 @@
 .vscode/settings.json
 dagger_mario_bros/roms/SuperMarioBros.nes
 __pycache__
+/colab_test
+colab_test.zip
+dagger_mario_bros/SMB_AI-expert_DQN-rl/test.py

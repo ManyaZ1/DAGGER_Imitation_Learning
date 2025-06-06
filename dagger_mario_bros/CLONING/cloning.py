@@ -8,15 +8,17 @@ import torch
 
 # Assuming your existing files are importable
 base_dir        = os.path.dirname(__file__)              # …/CLONING
+pkg_parent = os.path.abspath(os.path.join(base_dir, '..', 'expert-SMB_DQN'))
+sys.path.insert(0, pkg_parent)   
 super_dqn_path  = os.path.abspath(os.path.join(base_dir, '..',
                                                'expert-SMB_DQN',
                                                'super_dqn'))              # …/expert-SMB_DQN/super_dqn
 sys.path.append(super_dqn_path)                                           # add to PYTHONPATH
 # ───────────────────────────────────────────────────────────────────
 
-from agent import MarioAgent # Import og agent
-from agent   import MarioAgent          # now resolves
-from trainer import MarioTrainer
+from super_dqn.agent   import MarioAgent
+from super_dqn.trainer import MarioTrainer
+
 from behavior_cloning import (
     ExpertDemonstrationCollector, 
     BehaviorCloningAgent, 
@@ -98,9 +100,16 @@ class MarioBehaviorCloningExperiment:
             print(f"\n--- Training BC Agent: {scenario_name} ---")
             
             # Create BC agent
-            bc_agent = BehaviorCloningAgent(self.state_shape, self.n_actions, lr=1e-4)
-            
-            # Train
+            #bc_agent = BehaviorCloningAgent(self.state_shape, self.n_actions, lr=1e-4)
+            # NEW (auto-detect true shape)
+            # Use one transformed demo to determine the true input shape
+            sample_state = demonstrations[0]['state']
+            if obs_wrapper:
+                sample_state = obs_wrapper.transform_observation(sample_state)
+
+            input_shape = sample_state.shape
+            bc_agent = BehaviorCloningAgent(input_shape, self.n_actions)
+                        # Train
             bc_agent.train(
                 demonstrations=demonstrations,
                 observation_wrapper=obs_wrapper,
@@ -110,7 +119,11 @@ class MarioBehaviorCloningExperiment:
             )
             
             # Save agent
-            agent_path = f'bc_agent_{scenario_name.replace(" ", "_").replace("(", "").replace(")", "")}.pth'
+            safe_name = scenario_name.lower()
+            safe_name = safe_name.replace(" ", "_").replace("(", "").replace(")", "")
+            safe_name = safe_name.replace("/", "_").replace("\\", "_")
+            agent_path = f'bc_agent_{safe_name}.pth'
+            #agent_path = f'bc_agent_{scenario_name.replace(" ", "_").replace("(", "").replace(")", "")}.pth'
             torch.save(bc_agent.network.state_dict(), agent_path)
             
             bc_agents[scenario_name] = bc_agent
@@ -185,6 +198,8 @@ class MarioBehaviorCloningExperiment:
         scores = []
         
         for episode in range(episodes):
+            #self.trainer.prev_x_pos = 40 # Reset position for each episode
+            self.trainer.prev_x_pos = 40  # Reset position for each episode
             state = self.env.reset()
             total_reward = 0
             done = False
@@ -302,14 +317,14 @@ class MarioBehaviorCloningExperiment:
         # Step 1: Collect demonstrations
         demonstrations = self.step1_collect_expert_demonstrations(
             expert_model_path=expert_model_path,
-            num_episodes=100,  # Increase for better performance
+            num_episodes=10,  # Increase for better performance 100
             save_path=demonstrations_path
         )
         
         # Step 2: Train BC agents
         bc_agents, training_results = self.step2_train_behavior_cloning_agents(
             demonstrations_path=demonstrations_path,
-            epochs=150  # Increase for better convergence
+            epochs=100  # Increase for better convergence 150
         )
         
         # Step 3: Evaluate

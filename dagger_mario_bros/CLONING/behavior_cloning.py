@@ -401,7 +401,7 @@ class BehaviorCloningEvaluator:
                 # Track progress
                 x_pos = info.get('x_pos', 0)
                 max_x_pos = max(max_x_pos, x_pos)
-            
+            print(f"[{episode+1:02d}] Score: {total_reward:.1f} | Steps: {steps} | Max X: {max_x_pos} | Flag: {info.get('flag_get', False)}")
             scores.append(total_reward)
             episode_lengths.append(steps)
             max_x_positions.append(max_x_pos)

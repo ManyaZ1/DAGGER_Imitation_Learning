@@ -25,8 +25,6 @@ from nes_py.wrappers import JoypadSpace
 import warnings
 warnings.filterwarnings('ignore', category = UserWarning, module = 'gym')
 
-base_dir = os.path.dirname(__file__)
-
 @dataclass
 class DaggerConfig:
     '''
@@ -199,7 +197,7 @@ class DaggerTrainer:
             total_reward += reward
             step_count   += 1
 
-            if done: # Πρέπει να γίνει έλγχος αν είναι σωστή συνθήκη!
+            if done or info.get('life', 2) < 2: # Τέλος επεισοδίου!
                 break
         
         # Υπολογισμός expert agreement
@@ -296,7 +294,7 @@ class DaggerTrainer:
                 self.metrics['expert_agreement'].append(episode_info['agreement'])
                 self.metrics['episode_lengths'].append(episode_info['steps'])
 
-                if episode_info['flag_get'] and reward_temp > 3420: # 3420 βάση δοκιμών!
+                if episode_info['flag_get'] and reward_temp > 3000: # 3000 βάση δοκιμών!
                     # Αποθήκευση μοντέλου όταν ολοκληρώσει το επίπεδο!!!
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     flag_model_path = os.path.join(

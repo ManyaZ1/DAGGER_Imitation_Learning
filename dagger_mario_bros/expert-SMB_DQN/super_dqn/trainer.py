@@ -21,7 +21,7 @@ class MarioTrainer:
                  world:       str = '1',
                  stage:       str = '1',
                  action_type: str = 'simple',
-                 max_steps:   int = 1000) -> None:
+                 max_steps:   int = 800) -> None:
         # Δημιουργία περιβάλλοντος Gym για συγκεκριμένο επίπεδο
         env_name = f'SuperMarioBros-{world}-{stage}-v0'
         self.env = gym_super_mario_bros.make(env_name)

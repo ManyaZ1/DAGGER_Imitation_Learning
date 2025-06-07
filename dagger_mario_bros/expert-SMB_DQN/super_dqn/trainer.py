@@ -118,6 +118,8 @@ class MarioTrainer:
             self.agent.scores.append(total_reward)
             avg_score = np.mean(self.agent.scores[-100:])
             self.agent.avg_scores.append(avg_score)
+            if avg_score > self.best_avg_score:
+                self.best_avg_score = avg_score
             
             if episode % 10 == 0:
                 print(f'Episode {episode}/{episodes}')

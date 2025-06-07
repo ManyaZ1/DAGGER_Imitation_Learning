@@ -169,16 +169,7 @@ class DaggerTrainer:
                 self.renderer.render()
             
             # --- Ενέργειες από τον learner και τον expert ---
-            if self.expert_agreement_window:
-                avg_agreement = sum(
-                    self.expert_agreement_window) / len(self.expert_agreement_window
-                )
-            else:
-                avg_agreement = 1. # Initially use full expert
-            learner_action = self.learner.act_agreement_based(
-                state, agreement_rate = avg_agreement
-            )
-            'learner_action = self.learner.act(state) # Original action selection'
+            learner_action = self.learner.act(state)
             expert_action  = self.expert.act(state, training = False)
             
             # Διατήρηση των ενεργειών για agreement calculation!
@@ -352,7 +343,7 @@ def main():
     config = DaggerConfig(
         iterations                = 100,
         episodes_per_iter         = 10,
-        training_batches_per_iter = 300,
+        training_batches_per_iter = 200,
         expert_model_path= os.path.join(
             base_dir, '..',
             'expert-SMB_DQN', 'models', 'ep30000_MARIO_EXPERT.pth'

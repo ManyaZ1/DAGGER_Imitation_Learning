@@ -109,28 +109,6 @@ class DaggerMarioAgent(MarioAgent):
         
         return action
     
-    def act_agreement_based(self, state: np.ndarray, agreement_rate: float) -> int:
-        ''' Exploration βάση το expert agreement. '''
-        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-        
-        with torch.no_grad():
-            action_logits = self.q_network(state_tensor)
-            
-            # High disagreement -> more exploration
-            # High agreement    -> more exploitation
-            if agreement_rate < 0.7:   # Low agreement, explore more
-                temperature = 1.5
-                temp_logits = action_logits / temperature
-                action_probs = F.softmax(temp_logits, dim=1)
-                action = torch.multinomial(action_probs, 1).item()
-            elif agreement_rate < 0.9: # Medium agreement, balanced
-                action_probs = F.softmax(action_logits, dim=1)
-                action = torch.multinomial(action_probs, 1).item()
-            else:                      # High agreement, exploit
-                action = action_logits.argmax().item()
-                
-        return action
-    
     def save_model(self, filepath: str) -> None:
         checkpoint = {
             'q_network_state_dict':        self.q_network.state_dict(),

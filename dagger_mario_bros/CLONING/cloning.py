@@ -87,8 +87,8 @@ class MarioBehaviorCloningExperiment:
         scenarios = {
             'full_state': None,
             'partial_obs (2/4 channels)': PartialObservationWrapper('partial'),
-            'noisy_obs (σ=0.1)': PartialObservationWrapper('noisy', noise_level=0.1),
-            'noisy_obs (σ=0.2)': PartialObservationWrapper('noisy', noise_level=0.2),
+            'noisy_obs (sigma=0.1)': PartialObservationWrapper('noisy', noise_level=0.1),
+            'noisy_obs (sigma=0.2)': PartialObservationWrapper('noisy', noise_level=0.2),
             'downsampled': PartialObservationWrapper('downsampled')
         }
         

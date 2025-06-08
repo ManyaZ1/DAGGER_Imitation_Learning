@@ -41,6 +41,7 @@ class DaggerConfig:
     save_frequency:            int = 1
     early_stopping_threshold:  float = 0.95
     max_episode_steps:         int = 4000
+    noise_probability:         float = 0.2
 
 class DaggerTrainer:
     ''' DAGGER [Dataset Aggregation] trainer για τον Mario AI agent. '''
@@ -170,6 +171,10 @@ class DaggerTrainer:
             
             # --- Ενέργειες από τον learner και τον expert ---
             learner_action = self.learner.act(state)
+            # Random actions during training from learner - NOISE INJECTION!
+            if np.random.random() < self.config.noise_probability:
+                learner_action = np.random.randint(self.n_actions)
+
             expert_action  = self.expert.act(state, training = False)
             
             # Διατήρηση των ενεργειών για agreement calculation!
@@ -341,8 +346,8 @@ class DaggerTrainer:
 
 def main():
     config = DaggerConfig(
-        iterations                = 100,
-        episodes_per_iter         = 10,
+        iterations                = 200,
+        episodes_per_iter         = 20,
         training_batches_per_iter = 200,
         expert_model_path= os.path.join(
             base_dir, '..',

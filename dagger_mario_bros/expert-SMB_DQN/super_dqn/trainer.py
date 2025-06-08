@@ -104,15 +104,6 @@ class MarioTrainer:
                 
                 if done:
                     break
-
-                if info.get('flag_get', False) and total_reward > 3420: # 3420 βάση δοκιμών!
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    model_path = os.path.join(
-                        save_dir,
-                        f'mario_model_FLAG_ep{episode}_{int(total_reward)}_{timestamp}.pth'
-                    )
-                    self.agent.save_model(model_path)
-                    print(f'Model που τερμάτισε: {model_path}')
             
             # Καταγραφή score για το επεισόδιο
             self.agent.scores.append(total_reward)
@@ -134,6 +125,17 @@ class MarioTrainer:
                 save_path = os.path.join(save_dir, f'mario_model_ep{episode}_{timestamp}.pth')
                 self.agent.save_model(save_path)
                 print(f'Best Average Score so far: {self.best_avg_score:.2f}')
+
+            if done and info.get('flag_get', False) and total_reward > 3400:
+                    # Το score πρέπει να είναι πάνω από 3400
+                    # για να θεωρηθεί expert! Βάση δοκιμών!
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    model_path = os.path.join(
+                        save_dir,
+                        f'mario_model_FLAG_ep{episode}_{int(total_reward)}_{timestamp}.pth'
+                    )
+                    self.agent.save_model(model_path)
+                    print(f'Model που τερμάτισε: {model_path}')
         
         # Final save
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

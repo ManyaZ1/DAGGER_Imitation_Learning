@@ -51,7 +51,7 @@ def main():
     elif user_input == 'dagger':
         model_path = os.path.join(
             parrent_dir, '..', 'DAGGER', 'models_dagger',
-            'mario_model_FLAG_iter200_3413_20250608_140808.pth'
+            'mario_FLAG_iter77_ep9_3301_20250608_153057.pth'
         )
         trainer.test(
             model_path, episodes = 1, render = True, show_controller = True

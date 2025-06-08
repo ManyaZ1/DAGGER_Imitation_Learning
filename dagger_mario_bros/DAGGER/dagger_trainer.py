@@ -39,7 +39,6 @@ class DaggerConfig:
     stage:                     str = '1'
     render:                    bool = False
     save_frequency:            int = 1
-    early_stopping_threshold:  float = 0.95
     max_episode_steps:         int = 4000
     noise_probability:         float = 0.2
 
@@ -233,6 +232,20 @@ class DaggerTrainer:
 
         return avg_loss
     
+    def _train_learner_immediate(self, num_batches: int = 3) -> float:
+        """Train learner immediately with specified number of batches."""
+        total_loss = 0.
+        batch_count = 0
+        
+        for batch in range(num_batches):
+            loss = self.learner.replay()
+            if loss is not None:
+                total_loss += loss
+                batch_count += 1
+        
+        avg_loss = total_loss / max(batch_count, 1)
+        return avg_loss
+    
     def _save_checkpoint(self, iteration: int, metrics: Dict):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
@@ -253,19 +266,6 @@ class DaggerTrainer:
         print(f'Metrics saved: {metrics_path}')
 
         return str(model_path)
-
-    def _check_early_stopping(self) -> bool:
-        ''' Ελέγχει αν πληρούνται τα κριτήρια early stopping... '''
-        if len(self.expert_agreement_window) < 50: # Φυσικά, πρέπει να υπάρχουν δεδομένα...
-            return False
-        
-        recent_agreement = np.mean(list(self.expert_agreement_window)[-50:])
-        
-        if recent_agreement >= self.config.early_stopping_threshold:
-            print(f'Early stopping! Agreement rate: {recent_agreement:.3f}')
-            return True
-        
-        return False
     
     def train(self) -> Dict:
         '''Βασική συνάρτηση/loop εκπαίδευσης DAGGER.'''
@@ -278,7 +278,7 @@ class DaggerTrainer:
             iteration_rewards    = []
             iteration_agreements = []
             
-            # Συλλογή επεισοδίων για την συγκεκριμένη επανάληψη
+            # Run episodes one by one and immediately save flag completions
             for episode in range(self.config.episodes_per_iter):
                 episode_info = self._run_episode(iteration, episode)
                 
@@ -290,17 +290,31 @@ class DaggerTrainer:
                 self.metrics['expert_agreement'].append(episode_info['agreement'])
                 self.metrics['episode_lengths'].append(episode_info['steps'])
 
-                if episode_info['flag_get'] and reward_temp > 3000: # 3000 βάση δοκιμών!
-                    # Αποθήκευση μοντέλου όταν ολοκληρώσει το επίπεδο!!!
+                # IMMEDIATE FLAG SAVE - Right after episode completion
+                if episode_info['flag_get']:
+                    print(f'* FLAG CAPTURED in episode {episode+1}! Score: {reward_temp:.2f}')
+                    
+                    # Train immediately with current memory
+                    print(f'Training learner immediately with '
+                          f'{len(getattr(self.learner, "dagger_memory", self.learner.memory))} experiences...')
+                    immediate_loss = self._train_learner_immediate()
+                    
+                    # Save the model that just learned from the successful episode
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     flag_model_path = os.path.join(
                         self.save_dir,
-                        f'mario_model_FLAG_iter{iteration+1}_{int(reward_temp)}_{timestamp}.pth'
+                        f'mario_FLAG_iter{iteration+1}_ep{episode+1}_{int(reward_temp)}_{timestamp}.pth'
                     )
                     self.learner.save_model(flag_model_path)
-                    print(f'Το επίπεδο ολοκληρώθηκε! Μοντέλο: {flag_model_path}')
+                    print(f'-> FLAG MODEL SAVED IMMEDIATELY: {flag_model_path}')
+                    print(f'   Score: {reward_temp:.2f}, Loss: {immediate_loss:.6f}')
             
-            # Στατιστικά για την τρέχουσα επανάληψη
+            # Regular training after all episodes (additional training)
+            print(f'Final training with {len(self.learner.memory)} experiences...')
+            avg_loss = self._train_learner(iteration)
+            self.metrics['training_losses'].append(avg_loss)
+            
+            # Iteration summary
             avg_reward    = np.mean(iteration_rewards)
             avg_agreement = np.mean(iteration_agreements)
             
@@ -310,12 +324,11 @@ class DaggerTrainer:
             print(f'  Average Reward:    {avg_reward:.2f}')
             print(f'  Average Agreement: {avg_agreement:.3f}')
             print(f'  Best Iter Reward:  {max(iteration_rewards):.2f}')
+            print(f'  Final Training Loss: {avg_loss:.6f}')
+            flag_count = sum(1 for r in iteration_rewards if r > 3000)  # Approximate flag count
+            print(f'  Flag Completions:  {flag_count}')
 
-            # Εκπαίδευση του learner agent με τα δεδομένα της επανάληψης
-            avg_loss = self._train_learner(iteration)
-            self.metrics['training_losses'].append(avg_loss)
-            
-            # Save checkpoint
+            # Regular checkpoint saves
             if (iteration + 1) % self.config.save_frequency == 0:
                 checkpoint_path = self._save_checkpoint(iteration, {
                     'iteration':     iteration + 1,
@@ -327,12 +340,8 @@ class DaggerTrainer:
                 if avg_reward > self.best_reward:
                     self.best_reward = avg_reward
                     best_model_path  = checkpoint_path
-            
-            # Early stopping έλεγχος!
-            if self._check_early_stopping():
-                break
         
-        # Τελική αναφορά αποτελεσμάτων
+        # Final results
         print(f'Best Average Reward: {self.best_reward:.2f}')
         print(f'Final Expert Agreement: {np.mean(list(self.expert_agreement_window)[-10:]):.3f}')
         print(f'Best Model: {best_model_path}')
@@ -357,7 +366,6 @@ def main():
         stage                    = '1',
         render                   = False,
         save_frequency           = 25,
-        early_stopping_threshold = 0.9,
         max_episode_steps        = 800, # Στα 300 κάπου τερματίζεται η πίστα!
     )
     

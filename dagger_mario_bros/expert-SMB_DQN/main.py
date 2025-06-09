@@ -28,7 +28,7 @@ def main():
         print('Επιλογή ΜΗ έγκυρη. Τερματισμός προγράμματος...') 
         return
     
-    trainer = MarioTrainer(world = '1', stage = '1', action_type = 'simple')
+    trainer = MarioTrainer()
     parrent_dir = os.path.dirname(os.path.abspath(__file__))
 
     if user_input == 'train':

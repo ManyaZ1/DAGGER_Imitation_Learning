@@ -20,7 +20,8 @@ class MarioTrainer:
                  world:       str = '1',
                  stage:       str = '1',
                  action_type: str = 'simple',
-                 max_steps:   int = 800) -> None:
+                 max_steps:   int = 800,
+                 printless:   bool = False) -> None:
         # Δημιουργία περιβάλλοντος Gym για συγκεκριμένο επίπεδο
         env_name = f'SuperMarioBros-{world}-{stage}-v0'
         self.env = gym_super_mario_bros.make(env_name)
@@ -48,12 +49,13 @@ class MarioTrainer:
         # Δημιουργία agent με βάση τα χαρακτηριστικά του περιβάλλοντος
         state_shape = self.env.observation_space.shape
         n_actions   = self.env.action_space.n
-        self.agent  = MarioAgent(state_shape, n_actions)
-        
-        print(f'Environment:       {env_name}')
-        print(f'State shape:       {state_shape}')
-        print(f'Number of actions: {n_actions}')
-        print(f'Actions:           {actions}')
+        self.agent  = MarioAgent(state_shape, n_actions, printless = True)
+
+        if not printless:
+            print(f'Environment:       {env_name}')
+            print(f'State shape:       {state_shape}')
+            print(f'Number of actions: {n_actions}')
+            print(f'Actions:           {actions}')
 
         self.best_avg_score    = float('-inf') # Track best average score
         self.max_episode_steps = max_steps # Μέγιστο πλήθος βημάτων ανά επεισόδιο

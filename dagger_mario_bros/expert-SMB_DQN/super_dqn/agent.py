@@ -86,7 +86,8 @@ class MarioAgent:
                  epsilon:       float = 1.,
                  epsilon_decay: float = 0.99995,
                  epsilon_min:   float = 0.01,
-                 gradient_clip: float = 1.) -> None:
+                 gradient_clip: float = 1.,
+                 printless:     bool = False) -> None:
         self.state_shape   = state_shape
         self.n_actions     = n_actions
         self.epsilon       = epsilon       # Αρχική πιθανότητα τυχαίας εξερεύνησης
@@ -115,9 +116,10 @@ class MarioAgent:
         self.scores = []
         self.avg_scores = []
         
-        print(f'Γίνεται χρήση της συσκευής: {self.device}')
-        print(f'Gradient clipping threshold: {self.gradient_clip}')
-        print(f'Η αρχιτεκτονική του δικτύου είναι:\n{self.q_network}\n')
+        if not printless:
+            print(f'Γίνεται χρήση της συσκευής: {self.device}')
+            print(f'Gradient clipping threshold: {self.gradient_clip}')
+            print(f'Η αρχιτεκτονική του δικτύου είναι:\n{self.q_network}\n')
 
         return
     

@@ -1,6 +1,11 @@
-from super_dqn.trainer import MarioTrainer
 import glob
+import sys
 import os
+
+# Setup paths
+base_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(base_dir, 'super_dqn'))
+from super_dqn.trainer import MarioTrainer
 
 # Γιατί μας τα ζάλιζε ένα gym...
 import warnings
@@ -50,8 +55,8 @@ def main():
         )
     elif user_input == 'dagger':
         model_path = os.path.join(
-            parrent_dir, '..', 'DAGGER', 'models_dagger',
-            'mario_FLAG_iter77_ep9_3301_20250608_153057.pth'
+            parrent_dir, '..', 'DAGGER', 'SUCCESS',
+            'mario_FLAG_iter574_ep19_3425_20250609_072905-success.pth'
         )
         trainer.test(
             model_path, episodes = 1, render = True, show_controller = True

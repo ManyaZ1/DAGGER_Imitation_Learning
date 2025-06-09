@@ -1,4 +1,3 @@
-import gym
 import gym_super_mario_bros
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, COMPLEX_MOVEMENT, RIGHT_ONLY
 from nes_py.wrappers import JoypadSpace
@@ -173,13 +172,23 @@ class MarioTrainer:
         return shaped_reward
     
     def test(self,
-             model_path:      str,
-             episodes:        int = 5,
-             render:          bool = True,
-             show_controller: bool = False) -> list:
-        '''Δοκιμή μοντέλου'''
-        self.agent.load_model(model_path)
-        self.agent.epsilon = 0  # Όχι exploration κατά το testing!
+             model_path:       str = None,
+             episodes:         int = 1,
+             render:           bool = True,
+             show_controller:  bool = False,
+             env_unresponsive: bool = False,
+             test_agent:       MarioAgent = None) -> bool:
+        '''
+        Δοκιμή μοντέλου
+        
+        Parameters:
+         - env_unresponsive_: True -> ελέγχει αν το περιβάλλον είναι "κολλημένο" - bugged.
+        '''
+        if model_path is None:
+            self.agent = test_agent
+        else:
+            self.agent.load_model(model_path)
+        self.agent.epsilon = 0 # Όχι exploration κατά το testing!
         controller_overlay = NESControllerOverlay()
         
         print(f'Δοκιμή μοντέλου για {episodes} επεισόδια...')
@@ -194,12 +203,56 @@ class MarioTrainer:
             steps        = 0
             done         = False
             
+            # Variables to track repeated actions and Mario's position
+            action_history   = []
+            position_history = []
+            stuck_counter    = 0
+            force_no_action  = False
+            
             while not done:
                 if render:
                     renderer.render()
                 
-                # Action βάσει του εκπαιδευμένου μοντέλου (ΧΩΡΙΣ RANDOM)!
-                action = self.agent.act(state, training = False)
+                current_x_pos = self.prev_x_pos # Track current position
+                
+                # Check if Mario is stuck (no response from environment) - Ξεκολλάμε το gym!!!
+                if env_unresponsive:
+                    if len(action_history) >= 10:
+                        # Check if last 10 actions are the same
+                        last_10_actions = action_history[-10:]
+                        if len(set(last_10_actions)) == 1:
+                            # Check if Mario's position hasn't changed significantly - Env froze!
+                            if len(position_history) >= 10:
+                                last_10_positions = position_history[-10:]
+                                position_change   = max(last_10_positions) - min(last_10_positions)
+                                if position_change <= 5: # Mario hasn't moved much (adjust threshold as needed)
+                                    if model_path is not None:
+                                        print('\nEnvironment froze / became unresponsive.')
+                                        print('Taking emergency recovery step!')
+                                    force_no_action = True
+                                    stuck_counter  += 1
+                
+                # Action selection
+                if force_no_action:
+                    # Force "no action"
+                    action = 0
+                    force_no_action = False
+                    # Clear history to restart detection
+                    action_history = []
+                    position_history = []
+                else:
+                    # Normal action selection from trained model
+                    action = self.agent.act(state, training = False)
+                
+                # Track action and position history
+                action_history.append(action)
+                position_history.append(current_x_pos)
+                
+                # Keep only last 15 entries to avoid memory issues
+                if len(action_history) > 15:
+                    action_history = action_history[-15:]
+                    position_history = position_history[-15:]
+                
                 if show_controller:
                     controller_overlay.show(self.actions[action])
                 
@@ -222,16 +275,24 @@ class MarioTrainer:
                     break
             
             test_scores.append(total_reward)
-            print(f'Test Episode {episode + 1}: Score = {total_reward}, Steps = {steps}')
-            print(f"Final Position: {info.get('x_pos', 0)}, Lives: {info.get('life', 3)}")
+            if model_path is not None:
+                print(f'\nTest Episode {episode + 1}: Score = {total_reward}, Steps = {steps}')
+                print(f"Final Position: {info.get('x_pos', 0)}, Lives: {info.get('life', 3)}")
+                if stuck_counter > 0:
+                    print(f'Environment unresponsive {stuck_counter} times...')
         
         avg_test_score = np.mean(test_scores)
-        print(f'\nAverage Test Score: {avg_test_score:.2f}')
+        if model_path is not None:
+            print(f'\nAverage Test Score: {avg_test_score:.2f}')
         
         cv2.destroyAllWindows()
         self.env.close()
 
-        return test_scores
+        temp = False
+        if info.get('flag_get', False):
+            temp = True
+
+        return temp
     
     def _plot_training_progress(self) -> None:
         '''Γραφική για την πρόοδο της εκπαίδευσης'''

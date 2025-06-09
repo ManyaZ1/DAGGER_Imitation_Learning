@@ -23,8 +23,8 @@ def main():
     )
 
     trainer.test(
-            model_path, episodes = 1, render = True, show_controller = True
-        )
+        model_path, episodes = 1, render = True, show_controller = True
+    )
     
     return
 

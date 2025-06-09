@@ -172,12 +172,18 @@ class MarioTrainer:
         return shaped_reward
     
     def test(self,
-             model_path:      str = None,
-             episodes:        int = 1,
-             render:          bool = True,
-             show_controller: bool = False,
-             test_agent:      MarioAgent = None) -> bool:
-        '''Δοκιμή μοντέλου'''
+             model_path:       str = None,
+             episodes:         int = 1,
+             render:           bool = True,
+             show_controller:  bool = False,
+             env_unresponsive: bool = False,
+             test_agent:       MarioAgent = None) -> bool:
+        '''
+        Δοκιμή μοντέλου
+        
+        Parameters:
+         - env_unresponsive_: True -> ελέγχει αν το περιβάλλον είναι "κολλημένο" - bugged.
+        '''
         if model_path is None:
             self.agent = test_agent
         else:
@@ -209,21 +215,22 @@ class MarioTrainer:
                 
                 current_x_pos = self.prev_x_pos # Track current position
                 
-                # Check if Mario is stuck (no response from environment)
-                if len(action_history) >= 10:
-                    # Check if last 10 actions are the same
-                    last_10_actions = action_history[-10:]
-                    if len(set(last_10_actions)) == 1:
-                        # Check if Mario's position hasn't changed significantly - Env froze!
-                        if len(position_history) >= 10:
-                            last_10_positions = position_history[-10:]
-                            position_change   = max(last_10_positions) - min(last_10_positions)
-                            if position_change <= 5: # Mario hasn't moved much (adjust threshold as needed)
-                                if model_path is not None:
-                                    print('\nEnvironment froze / became unresponsive.')
-                                    print('Taking emergency recovery step!')
-                                force_no_action = True
-                                stuck_counter  += 1
+                # Check if Mario is stuck (no response from environment) - Ξεκολλάμε το gym!!!
+                if env_unresponsive:
+                    if len(action_history) >= 10:
+                        # Check if last 10 actions are the same
+                        last_10_actions = action_history[-10:]
+                        if len(set(last_10_actions)) == 1:
+                            # Check if Mario's position hasn't changed significantly - Env froze!
+                            if len(position_history) >= 10:
+                                last_10_positions = position_history[-10:]
+                                position_change   = max(last_10_positions) - min(last_10_positions)
+                                if position_change <= 5: # Mario hasn't moved much (adjust threshold as needed)
+                                    if model_path is not None:
+                                        print('\nEnvironment froze / became unresponsive.')
+                                        print('Taking emergency recovery step!')
+                                    force_no_action = True
+                                    stuck_counter  += 1
                 
                 # Action selection
                 if force_no_action:

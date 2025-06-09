@@ -19,7 +19,7 @@ from nes_py.wrappers import JoypadSpace
 
 def main():
     model_path = os.path.join(
-        base_dir, 'models_dagger', 'mario_FLAG_iter105_ep12_3346_20250608_154904.pth'
+        base_dir, 'models_dagger', 'mario_FLAG_iter4_ep15_3123_20250609_112559.pth'
     )
 
     # Init environment

@@ -157,7 +157,10 @@ class DaggerTrainer:
         ''' Τρέχει 1 επεισόδιο και συλλέγει δεδομένα '''
         state = self.env.reset()
         self.prev_x_pos = 40 # Αρχική θέση Mario
-
+        
+        # β-schedule: start with 1 (always expert), decay to 0.1 (mostly learner)
+        beta = max(0.1, 1. - (iteration / self.config.iterations) * 0.9)
+        
         done            = False
         total_reward    = 0
         step_count      = 0
@@ -169,24 +172,26 @@ class DaggerTrainer:
                 self.renderer.render()
             
             # --- Ενέργειες από τον learner και τον expert ---
-            learner_action = self.learner.act(state)
-            # Random actions during training from learner - NOISE INJECTION!
-            if np.random.random() < self.config.noise_probability:
-                learner_action = np.random.randint(self.n_actions)
-
             expert_action  = self.expert.act(state, training = False)
+            learner_action = self.learner.act(state)
             
-            # Διατήρηση των ενεργειών για agreement calculation!
-            learner_actions.append(learner_action)
-            expert_actions.append(expert_action)
+            # Decide which action to execute based on β-schedule
+            if np.random.random() < beta:
+                action_to_execute = expert_action
+            else:
+                action_to_execute = learner_action
             
-            # Εκτέλεση της ενέργειας του learner στο περιβάλλον
-            next_state, reward, done, info = self.env.step(learner_action)
+            # Execute the chosen action
+            next_state, reward, done, info = self.env.step(action_to_execute)
             reward = self._shape_reward(reward, info, done)
             
             # Θυμήσου την αλληλεπίδραση expert-περιβάλλοντος, δηλαδή:
             # Expert provides correct labels for those states
             self.learner.remember(state, expert_action, reward, next_state, done)
+            
+            # Διατήρηση των ενεργειών για agreement calculation!
+            learner_actions.append(learner_action)
+            expert_actions.append(expert_action)
             
             state         = next_state
             total_reward += reward
@@ -291,12 +296,12 @@ class DaggerTrainer:
                 self.metrics['episode_lengths'].append(episode_info['steps'])
 
                 # IMMEDIATE FLAG SAVE - Right after episode completion
-                if episode_info['flag_get']:
+                if iteration_agreements[-1] == 1.:
                     print(f'* FLAG CAPTURED in episode {episode+1}! Score: {reward_temp:.2f}')
                     
                     # Train immediately with current memory
                     print(f'Training learner immediately with '
-                          f'{len(getattr(self.learner, "dagger_memory", self.learner.memory))} experiences...')
+                          f'{len(getattr(self.learner, "dagger_memory", self.learner.dagger_memory))} experiences...')
                     immediate_loss = self._train_learner_immediate()
                     
                     # Save the model that just learned from the successful episode
@@ -310,7 +315,7 @@ class DaggerTrainer:
                     print(f'   Score: {reward_temp:.2f}, Loss: {immediate_loss:.6f}')
             
             # Regular training after all episodes (additional training)
-            print(f'Final training with {len(self.learner.memory)} experiences...')
+            print(f'Final training with {len(self.learner.dagger_memory)} experiences...')
             avg_loss = self._train_learner(iteration)
             self.metrics['training_losses'].append(avg_loss)
             

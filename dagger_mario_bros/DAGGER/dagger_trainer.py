@@ -506,8 +506,7 @@ class DaggerTrainer:
                         f'mario_FLAG_iter{iteration+1}_ep{episode+1}_{int(reward_temp)}_{timestamp}.pth'
                     )
                     self.learner.save_model(flag_model_path)
-                    print(f'-> FLAG MODEL SAVED IMMEDIATELY: {flag_model_path}')
-                    print(f'   Score: {reward_temp:.2f}, Loss: {immediate_loss:.6f}')
+                    
                 
                 # IMMEDIATE FLAG SAVE - Right after episode completion
                 if episode_info['flag_get']:

@@ -154,10 +154,14 @@ class DaggerTrainer:
         return shaped_reward
     def _run_episode(self, iteration: int, episode: int) -> Dict:
         ''' Τρέχει 1 επεισόδιο και συλλέγει δεδομένα '''
+        #print(f"DEBUG: Starting episode {episode + 1}")
+        
         state = self.env.reset()
         self.prev_x_pos = 40  # Reset position
-        max_x = 0             # Track max x_pos reached
+        max_x = 0             # Track max x_pos reached - LOCAL VARIABLE
         x_positions = []      # Track x_pos progression for validation
+        
+        #print(f"DEBUG: Initial max_x = {max_x}")
 
         done = False
         total_reward = 0
@@ -185,8 +189,13 @@ class DaggerTrainer:
 
             # Track x position progression
             x_pos = info.get("x_pos", 0)
+            old_max_x = max_x  # Store old value for debugging
             max_x = max(max_x, x_pos)
             x_positions.append(x_pos)
+            
+            # Debug x position changes
+            #if max_x != old_max_x:
+                #print(f"DEBUG Step {step_count}: X position updated from {old_max_x} to {max_x}")
 
             self.learner.remember(state, expert_action, reward, next_state, done)
 
@@ -196,17 +205,23 @@ class DaggerTrainer:
 
             # Early stop if Mario dies
             if done or info.get("life", 2) < 2:
+                #print(f"DEBUG: Episode ended - done={done}, life={info.get('life', 2)}")
                 break
 
+        #print(f"DEBUG: Episode loop finished - final max_x = {max_x}")
+        
         # Final expert agreement
         agreement = self._calculate_expert_agreement(learner_actions, expert_actions)
         self.expert_agreement_window.append(agreement)
 
         # ROBUST FLAG DETECTION - Multiple criteria must be met
+        #print(f"DEBUG: About to call _detect_flag_completion with max_x={max_x}")
         flag_captured = self._detect_flag_completion(max_x, x_positions, info, total_reward, done)
         
+        #print(f"DEBUG: Flag detection returned: {flag_captured}")
+        
         # Debug information for flag area
-        if max_x > 3100 or info.get('flag_get', False):
+        if max_x > 3000 or info.get('flag_get', False):
             print(f"DEBUG FLAG AREA:")
             print(f"  Max X: {max_x}")
             print(f"  Environment flag_get: {info.get('flag_get', False)}")
@@ -230,6 +245,8 @@ class DaggerTrainer:
             f'Agreement: {agreement:.3f} | '
             f'Max X: {max_x:4} | '
             f'Flag: {flag_captured}')
+        
+        #print(f"DEBUG: Returning episode_info with final_x_pos={episode_info['final_x_pos']}")
 
         return episode_info
 
@@ -293,135 +310,6 @@ class DaggerTrainer:
             print(f"      RELAXED FLAG: {relaxed_flag}")
         
         return flag_decision
-    def _run_episode2(self, iteration: int, episode: int) -> Dict:
-        ''' Τρέχει 1 επεισόδιο και συλλέγει δεδομένα '''
-        state = self.env.reset()
-        self.prev_x_pos = 40  # Reset position
-        max_x = 0             # NEW: track max x_pos reached
-
-        done = False
-        total_reward = 0
-        step_count = 0
-        learner_actions = []
-        expert_actions = []
-
-        while not done and step_count < self.config.max_episode_steps:
-            if self.config.render:
-                self.renderer.render()
-
-            learner_action = self.learner.act(state)
-
-            # Optional noise injection
-            if np.random.random() < self.config.noise_probability:
-                learner_action = np.random.randint(self.n_actions)
-
-            expert_action = self.expert.act(state, training=False)
-
-            learner_actions.append(learner_action)
-            expert_actions.append(expert_action)
-
-            next_state, reward, done, info = self.env.step(learner_action)
-            reward = self._shape_reward(reward, info, done)
-
-            # Track max x position
-            x_pos = info.get("x_pos", 0)
-            max_x = max(max_x, x_pos)
-
-            self.learner.remember(state, expert_action, reward, next_state, done)
-
-            state = next_state
-            total_reward += reward
-            step_count += 1
-
-            # Early stop if Mario dies
-            if done or info.get("life", 2) < 2:
-                break
-
-        # Final expert agreement
-        agreement = self._calculate_expert_agreement(learner_actions, expert_actions)
-        self.expert_agreement_window.append(agreement)
-
-        flag_captured = max_x >= 3150  # STRONG flag detection
-
-        episode_info = {
-            'reward': total_reward,
-            'steps': step_count,
-            'agreement': agreement,
-            'final_x_pos': max_x,
-            'flag_get': flag_captured
-        }
-
-        print(f'[Episode {episode + 1:03}] '
-            f'Reward: {total_reward:8.2f} | '
-            f'Steps: {step_count:4} | '
-            f'Agreement: {agreement:.3f} | '
-            f'Max X: {max_x:4} | '
-            f'Flag: {flag_captured}')
-
-        return episode_info
-        
-    def _run_episode1(self, iteration: int, episode: int) -> Dict:
-        ''' Τρέχει 1 επεισόδιο και συλλέγει δεδομένα '''
-        state = self.env.reset()
-        self.prev_x_pos = 40 # Αρχική θέση Mario
-
-        done            = False
-        total_reward    = 0
-        step_count      = 0
-        learner_actions = []
-        expert_actions  = []
-
-        while not done and step_count < self.config.max_episode_steps:
-            if self.config.render:
-                self.renderer.render()
-            
-            # --- Ενέργειες από τον learner και τον expert ---
-            learner_action = self.learner.act(state)
-            # Random actions during training from learner - NOISE INJECTION!
-            if np.random.random() < self.config.noise_probability:
-                learner_action = np.random.randint(self.n_actions)
-
-            expert_action  = self.expert.act(state, training = False)
-            
-            # Διατήρηση των ενεργειών για agreement calculation!
-            learner_actions.append(learner_action)
-            expert_actions.append(expert_action)
-            
-            # Εκτέλεση της ενέργειας του learner στο περιβάλλον
-            next_state, reward, done, info = self.env.step(learner_action)
-            reward = self._shape_reward(reward, info, done)
-            
-            # Θυμήσου την αλληλεπίδραση expert-περιβάλλοντος, δηλαδή:
-            # Expert provides correct labels for those states
-            self.learner.remember(state, expert_action, reward, next_state, done)
-            
-            state         = next_state
-            total_reward += reward
-            step_count   += 1
-
-            if done or info.get('life', 2) < 2: # Τέλος επεισοδίου!
-                break
-        
-        # Υπολογισμός expert agreement
-        agreement = self._calculate_expert_agreement(learner_actions, expert_actions)
-        self.expert_agreement_window.append(agreement)
-        
-        episode_info = {
-            'reward':      total_reward,
-            'steps':       step_count,
-            'agreement':   agreement,
-            'final_x_pos': info.get('x_pos', 0),
-            'flag_get':    info.get('flag_get', False)
-        }
-        
-        print(f'[Episode {episode + 1:03}] '
-              f'Reward: {total_reward:8.2f} | '
-              f'Steps: {step_count:4} | '
-              f'Agreement: {agreement:.3f} | '
-              f'X-pos: {info.get("x_pos", 0):4}'
-        )
-        
-        return episode_info
     
     def _train_learner(self, iteration: int) -> float:
         ''' Εκπαίδευση του learner agent με τα δεδομένα που συγκεντρώθηκαν! '''
@@ -575,7 +463,7 @@ class DaggerTrainer:
 
 def main():
     config = DaggerConfig(
-        iterations                = 400, #800,200
+        iterations                = 700, #800,200
         episodes_per_iter         = 20,
         training_batches_per_iter = 200,
         expert_model_path= os.path.join(

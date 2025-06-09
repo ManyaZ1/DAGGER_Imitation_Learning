@@ -16,6 +16,7 @@ sys.path.append(lib_path)
 from agent import MarioAgent
 from env_wrappers import MarioPreprocessor
 from visual_utils import MarioRenderer
+from trainer import MarioTrainer
 from dagger_agent import DaggerMarioAgent
 
 import gym_super_mario_bros
@@ -201,12 +202,20 @@ class DaggerTrainer:
         # Add collected data to aggregated dataset
         self._add_to_aggregated_dataset(episode_data, iteration)
 
+        temp = False # Τερμάτισε όντως;
+        if info.get('flag_get', False):
+            print('\n-> Testing model with MarioTrainer...\n')
+            trainer = MarioTrainer()
+            if trainer.test(render = False, test_agent = self.learner):
+                temp = True
+            print(f'\n-> Model testing complete! {temp}\n')
+
         return {
-            'reward': total_reward,
-            'steps': step_count,
+            'reward':      total_reward,
+            'steps':       step_count,
             'data_points': len(episode_data),
             'final_x_pos': info.get('x_pos', 0),
-            'flag_get': info.get('flag_get', False),
+            'flag_get':    temp,
         }
 
     # ----------------------------------------------------------- TRAIN STEP

@@ -1,6 +1,11 @@
-from super_dqn.trainer import MarioTrainer
 import glob
+import sys
 import os
+
+# Setup paths
+base_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(base_dir, 'super_dqn'))
+from super_dqn.trainer import MarioTrainer
 
 # Γιατί μας τα ζάλιζε ένα gym...
 import warnings

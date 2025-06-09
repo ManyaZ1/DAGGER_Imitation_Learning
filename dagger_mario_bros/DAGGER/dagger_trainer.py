@@ -207,7 +207,8 @@ class DaggerTrainer:
             print('\n-> Testing model with MarioTrainer...\n')
             trainer = MarioTrainer()
             if trainer.test(
-                render = False, test_agent = self.learner, env_unresponsive = False
+                render = False, test_agent = self.learner,
+                env_unresponsive = False
             ):
                 temp = True
             print(f'\n-> Model testing complete! {temp}\n')

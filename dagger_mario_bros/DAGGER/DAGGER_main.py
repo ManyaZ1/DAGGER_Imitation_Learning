@@ -17,9 +17,10 @@ def main():
     trainer = MarioTrainer(world = '1', stage = '1', action_type = 'simple')
 
     # 'mario_FLAG_iter474_ep5_3394_20250609_053224.pth' καθεται διπλα στη σημαια και αραζει
+    #'mario_FLAG_iter192_ep12_3416_20250609_182914.pth'σκαλα
     model_path = os.path.join( 
-        base_dir, 'models_dagger',
-        'dagger_mario_iter25_20250609_130732.pth'
+        base_dir, 'models_dagger', 'mario_FLAG_iter248_ep12_3419_20250609_194001.pth'#'mario_FLAG_iter574_ep19_3425_20250609_072905-success.pth'
+        #'mario_FLAG_iter105_ep12_3346_20250608_154904.pth'
     )
 
     trainer.test(

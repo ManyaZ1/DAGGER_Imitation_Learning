@@ -4,3 +4,4 @@ __pycache__
 /colab_test
 colab_test.zip
 dagger_mario_bros/SMB_AI-expert_DQN-rl/test.py
+/dagger_mario_bros/DAGGER/models_dagger

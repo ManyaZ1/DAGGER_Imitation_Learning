@@ -179,7 +179,7 @@ class MarioTrainer:
              show_controller: bool = False) -> list:
         '''Δοκιμή μοντέλου'''
         self.agent.load_model(model_path)
-        self.agent.epsilon = 0  # Όχι exploration κατά το testing!
+        self.agent.epsilon = 0 # Όχι exploration κατά το testing!
         controller_overlay = NESControllerOverlay()
         
         print(f'Δοκιμή μοντέλου για {episodes} επεισόδια...')
@@ -194,12 +194,53 @@ class MarioTrainer:
             steps        = 0
             done         = False
             
+            # Variables to track repeated actions and Mario's position
+            action_history   = []
+            position_history = []
+            stuck_counter    = 0
+            force_no_action  = False
+            
             while not done:
                 if render:
                     renderer.render()
                 
-                # Action βάσει του εκπαιδευμένου μοντέλου (ΧΩΡΙΣ RANDOM)!
-                action = self.agent.act(state, training = False)
+                current_x_pos = self.prev_x_pos # Track current position
+                
+                # Check if Mario is stuck (same action repeated + no position change)
+                if len(action_history) >= 10:
+                    # Check if last 10 actions are the same
+                    last_10_actions = action_history[-10:]
+                    if len(set(last_10_actions)) == 1: # All actions are identical
+                        # Check if Mario's position hasn't changed significantly
+                        if len(position_history) >= 10:
+                            last_10_positions = position_history[-10:]
+                            position_change = max(last_10_positions) - min(last_10_positions)
+                            if position_change <= 5: # Mario hasn't moved much (adjust threshold as needed)
+                                print(f"Mario seems stuck! Forcing no-action for next step. Action: {last_10_actions[0]}, Pos change: {position_change}")
+                                force_no_action = True
+                                stuck_counter += 1
+                
+                # Action selection
+                if force_no_action:
+                    # Force "no action"
+                    action = 0
+                    force_no_action = False
+                    # Clear history to restart detection
+                    action_history = []
+                    position_history = []
+                else:
+                    # Normal action selection from trained model
+                    action = self.agent.act(state, training = False)
+                
+                # Track action and position history
+                action_history.append(action)
+                position_history.append(current_x_pos)
+                
+                # Keep only last 15 entries to avoid memory issues
+                if len(action_history) > 15:
+                    action_history = action_history[-15:]
+                    position_history = position_history[-15:]
+                
                 if show_controller:
                     controller_overlay.show(self.actions[action])
                 
@@ -224,6 +265,8 @@ class MarioTrainer:
             test_scores.append(total_reward)
             print(f'Test Episode {episode + 1}: Score = {total_reward}, Steps = {steps}')
             print(f"Final Position: {info.get('x_pos', 0)}, Lives: {info.get('life', 3)}")
+            if stuck_counter > 0:
+                print(f"Stuck detection triggered {stuck_counter} times")
         
         avg_test_score = np.mean(test_scores)
         print(f'\nAverage Test Score: {avg_test_score:.2f}')

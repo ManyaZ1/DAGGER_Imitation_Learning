@@ -206,19 +206,20 @@ class MarioTrainer:
                 
                 current_x_pos = self.prev_x_pos # Track current position
                 
-                # Check if Mario is stuck (same action repeated + no position change)
+                # Check if Mario is stuck (no response from environment)
                 if len(action_history) >= 10:
                     # Check if last 10 actions are the same
                     last_10_actions = action_history[-10:]
-                    if len(set(last_10_actions)) == 1: # All actions are identical
-                        # Check if Mario's position hasn't changed significantly
+                    if len(set(last_10_actions)) == 1:
+                        # Check if Mario's position hasn't changed significantly - Env froze!
                         if len(position_history) >= 10:
                             last_10_positions = position_history[-10:]
-                            position_change = max(last_10_positions) - min(last_10_positions)
+                            position_change   = max(last_10_positions) - min(last_10_positions)
                             if position_change <= 5: # Mario hasn't moved much (adjust threshold as needed)
-                                print(f"Mario seems stuck! Forcing no-action for next step. Action: {last_10_actions[0]}, Pos change: {position_change}")
+                                print('\nEnvironment froze / became unresponsive.')
+                                print('Taking emergency recovery step!')
                                 force_no_action = True
-                                stuck_counter += 1
+                                stuck_counter  += 1
                 
                 # Action selection
                 if force_no_action:
@@ -263,10 +264,10 @@ class MarioTrainer:
                     break
             
             test_scores.append(total_reward)
-            print(f'Test Episode {episode + 1}: Score = {total_reward}, Steps = {steps}')
+            print(f'\nTest Episode {episode + 1}: Score = {total_reward}, Steps = {steps}')
             print(f"Final Position: {info.get('x_pos', 0)}, Lives: {info.get('life', 3)}")
             if stuck_counter > 0:
-                print(f"Stuck detection triggered {stuck_counter} times")
+                print(f'Environment unresponsive {stuck_counter} times...')
         
         avg_test_score = np.mean(test_scores)
         print(f'\nAverage Test Score: {avg_test_score:.2f}')
@@ -274,7 +275,11 @@ class MarioTrainer:
         cv2.destroyAllWindows()
         self.env.close()
 
-        return test_scores
+        temp = False
+        if info.get('flag_get', False):
+            temp = True
+
+        return temp
     
     def _plot_training_progress(self) -> None:
         '''Γραφική για την πρόοδο της εκπαίδευσης'''

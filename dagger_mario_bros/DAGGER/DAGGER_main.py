@@ -20,7 +20,7 @@ from nes_py.wrappers import JoypadSpace
 def main():
     # 'mario_FLAG_iter474_ep5_3394_20250609_053224.pth' καθεται διπλα στη σημαια και αραζει
     model_path = os.path.join( 
-        base_dir, 'models_dagger', 'mario_FLAG_iter574_ep11_PAIRNEI-SHMAIA-3425.pth'#'mario_FLAG_iter105_ep12_3346_20250608_154904.pth'
+        base_dir, 'models_dagger', 'mario_FLAG_iter574_ep19_3425_20250609_072905-success.pth'#'mario_FLAG_iter105_ep12_3346_20250608_154904.pth'
     )
 
     # Init environment

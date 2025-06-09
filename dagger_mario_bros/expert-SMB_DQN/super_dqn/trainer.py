@@ -175,7 +175,7 @@ class MarioTrainer:
     
     def test(self,
              model_path:       str = None,
-             episodes:         int = 1,
+             episodes:         int = 1, # Κανονικά δεν χρειάζεται καθώς είναι ντετερμινιστικό κατά το testing-act...
              render:           bool = True,
              show_controller:  bool = False,
              env_unresponsive: bool = False,
@@ -190,12 +190,16 @@ class MarioTrainer:
             self.agent = test_agent
         else:
             self.agent.load_model(model_path)
+        
         self.agent.epsilon = 0 # Όχι exploration κατά το testing!
-        controller_overlay = NESControllerOverlay()
+
+        if show_controller:
+            controller_overlay = NESControllerOverlay()
         
-        print(f'Δοκιμή μοντέλου για {episodes} επεισόδια...')
+        if model_path is None:
+            print(f'Δοκιμή μοντέλου για {episodes} επεισόδιο...')
+
         test_scores = []
-        
         for episode in range(episodes):
             state = self.env.reset()
             self.prev_x_pos = 40
@@ -236,11 +240,11 @@ class MarioTrainer:
                 
                 # Action selection
                 if force_no_action:
-                    # Force "no action"
-                    action = 0
+                    # Force "no action" - Help agent with the gym bs!
+                    action          = 0
                     force_no_action = False
                     # Clear history to restart detection
-                    action_history = []
+                    action_history   = []
                     position_history = []
                 else:
                     # Normal action selection from trained model

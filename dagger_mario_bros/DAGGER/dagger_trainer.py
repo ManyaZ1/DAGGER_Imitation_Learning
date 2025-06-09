@@ -295,7 +295,9 @@ class DaggerTrainer:
                 # IMMEDIATE FLAG SAVE - Right after episode completion
                 if episode_info['flag_get']:
                     trainer = MarioTrainer(printless = True)
-                    if trainer.test(test_agent = self.learner, env_unresponsive = True):
+                    if trainer.test(
+                        test_agent = self.learner, render = False, env_unresponsive = True
+                    ):
                         print(f'* FLAG CAPTURED in episode {episode+1}! Score: {reward_temp:.2f}')
                         
                         # Train immediately with current memory

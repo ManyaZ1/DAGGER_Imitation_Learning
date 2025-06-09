@@ -192,6 +192,7 @@ class DaggerTrainer:
 
             state = next_state
             total_reward += reward
+            step_count += 1
 
             # Early stop if Mario dies
             if done or info.get("life", 2) < 2:

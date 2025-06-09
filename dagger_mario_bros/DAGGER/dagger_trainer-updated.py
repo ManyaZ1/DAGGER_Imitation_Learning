@@ -183,10 +183,11 @@ class DaggerTrainer:
 
             learner_actions.append(learner_action)
             expert_actions.append(expert_action)
-
-            next_state, reward, done, info = self.env.step(learner_action)
-            reward = self._shape_reward(reward, info, done)
-
+            #custom reward
+            #next_state, reward, done, info = self.env.step(learner_action)
+            # reward = self._shape_reward(reward, info, done)
+            #env default
+            next_state, reward, done, info = self.env.step(learner_action) 
             # Track x position progression
             x_pos = info.get("x_pos", 0)
             old_max_x = max_x  # Store old value for debugging

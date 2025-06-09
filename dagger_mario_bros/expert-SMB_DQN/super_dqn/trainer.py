@@ -49,7 +49,7 @@ class MarioTrainer:
         # Δημιουργία agent με βάση τα χαρακτηριστικά του περιβάλλοντος
         state_shape = self.env.observation_space.shape
         n_actions   = self.env.action_space.n
-        self.agent  = MarioAgent(state_shape, n_actions, printless = True)
+        self.agent  = MarioAgent(state_shape, n_actions, printless = printless)
 
         if not printless:
             print(f'Environment:       {env_name}')

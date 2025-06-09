@@ -40,7 +40,7 @@ class DaggerConfig:
     render:                    bool = False
     save_frequency:            int = 1
     max_episode_steps:         int = 4000
-    noise_probability:         float = 0.2
+    noise_probability:         float = 0.2 # 0.1?
 
 class DaggerTrainer:
     ''' DAGGER [Dataset Aggregation] trainer για τον Mario AI agent. '''
@@ -152,8 +152,215 @@ class DaggerTrainer:
             shaped_reward += 100
         
         return shaped_reward
-    
     def _run_episode(self, iteration: int, episode: int) -> Dict:
+        ''' Τρέχει 1 επεισόδιο και συλλέγει δεδομένα '''
+        state = self.env.reset()
+        self.prev_x_pos = 40  # Reset position
+        max_x = 0             # Track max x_pos reached
+        x_positions = []      # Track x_pos progression for validation
+
+        done = False
+        total_reward = 0
+        step_count = 0
+        learner_actions = []
+        expert_actions = []
+
+        while not done and step_count < self.config.max_episode_steps:
+            if self.config.render:
+                self.renderer.render()
+
+            learner_action = self.learner.act(state)
+
+            # Optional noise injection
+            if np.random.random() < self.config.noise_probability:
+                learner_action = np.random.randint(self.n_actions)
+
+            expert_action = self.expert.act(state, training=False)
+
+            learner_actions.append(learner_action)
+            expert_actions.append(expert_action)
+
+            next_state, reward, done, info = self.env.step(learner_action)
+            reward = self._shape_reward(reward, info, done)
+
+            # Track x position progression
+            x_pos = info.get("x_pos", 0)
+            max_x = max(max_x, x_pos)
+            x_positions.append(x_pos)
+
+            self.learner.remember(state, expert_action, reward, next_state, done)
+
+            state = next_state
+            total_reward += reward
+            step_count += 1
+
+            # Early stop if Mario dies
+            if done or info.get("life", 2) < 2:
+                break
+
+        # Final expert agreement
+        agreement = self._calculate_expert_agreement(learner_actions, expert_actions)
+        self.expert_agreement_window.append(agreement)
+
+        # ROBUST FLAG DETECTION - Multiple criteria must be met
+        flag_captured = self._detect_flag_completion(max_x, x_positions, info, total_reward, done)
+        
+        # Debug information for flag area
+        if max_x > 3100 or info.get('flag_get', False):
+            print(f"DEBUG FLAG AREA:")
+            print(f"  Max X: {max_x}")
+            print(f"  Environment flag_get: {info.get('flag_get', False)}")
+            print(f"  Total reward: {total_reward}")
+            print(f"  Done: {done}, Life: {info.get('life', 2)}")
+            print(f"  Last 10 X positions: {x_positions[-10:] if len(x_positions) >= 10 else x_positions}")
+            print(f"  FINAL FLAG DECISION: {flag_captured}")
+
+        episode_info = {
+            'reward': total_reward,
+            'steps': step_count,
+            'agreement': agreement,
+            'final_x_pos': max_x,
+            'flag_get': flag_captured
+        }
+
+        flag_symbol = "🏁" if flag_captured else "  "
+        print(f'[Episode {episode + 1:03}] {flag_symbol} '
+            f'Reward: {total_reward:8.2f} | '
+            f'Steps: {step_count:4} | '
+            f'Agreement: {agreement:.3f} | '
+            f'Max X: {max_x:4} | '
+            f'Flag: {flag_captured}')
+
+        return episode_info
+
+    def _detect_flag_completion(self, max_x: int, x_positions: List[int], 
+                            info: dict, total_reward: float, done: bool) -> bool:
+        """
+        Robust flag detection using multiple criteria.
+        A flag is only considered captured if MULTIPLE conditions are met.
+        """
+        
+        # Criterion 1: X position threshold (conservative)
+        x_threshold_met = max_x >= 3161
+        
+        # Criterion 2: Reward threshold (flag completion gives big reward boost)
+        # Adjust this based on your reward shaping - flag completion should give significant reward
+        reward_threshold_met = total_reward >= 3000  # Adjust based on your typical successful runs
+        
+        # Criterion 3: X position progression (Mario should have progressed significantly)
+        progression_valid = len(x_positions) > 50 and max_x > 3000  # Must have made significant progress
+        
+        # Criterion 4: Episode ended naturally (not due to death/timeout)
+        natural_completion = done and info.get('life', 2) >= 2  # Didn't die
+        # Criterion 5
+        environmentflag= info.get('flag_get', False)  # Check if environment flag is set
+        
+        # Criterion six (΄έχει χαλάσει το πληκτρολόγιο μου...): X position stability near flag (Mario should stay near flag area when captured)
+        x_stability = False
+        if len(x_positions) >= 20:
+            recent_x = x_positions[-20:]  # Last 20 positions
+            high_x_count = sum(1 for x in recent_x if x >= 3100)
+            x_stability = high_x_count >= 10  # At least half of recent positions in flag area
+        
+        # ALL criteria for high confidence flag detection
+        strict_flag = (x_threshold_met and reward_threshold_met and 
+                    progression_valid and natural_completion and environmentflag) # and x_stability) απορριφθηκε σαν εγκυρο κριτηριο
+        
+        # RELAXED criteria (at least 3 out of 5 must be true)
+        criteria_met = sum([
+            x_threshold_met,
+            reward_threshold_met, 
+            progression_valid,
+            natural_completion#,
+            #x_stability
+        ])
+        
+        relaxed_flag = criteria_met >= 3 and x_threshold_met  # X threshold is mandatory
+        
+        # Use strict criteria for now, can switch to relaxed if too conservative
+        flag_decision = strict_flag
+        
+        # Debug the decision process
+        if max_x > 3000:  # Only debug when close to flag area
+            print(f"    FLAG CRITERIA CHECK:")
+            print(f"      X threshold (>= 3161): {x_threshold_met} (max_x: {max_x})")
+            print(f"      Reward threshold (>= 2500): {reward_threshold_met} (reward: {total_reward:.1f})")
+            print(f"      Progression valid: {progression_valid}")
+            print(f"      Natural completion: {natural_completion}")
+            print(f"      X stability: {x_stability}")
+            print(f"      Criteria met: {criteria_met}/5")
+            print(f"      STRICT FLAG: {strict_flag}")
+            print(f"      RELAXED FLAG: {relaxed_flag}")
+        
+        return flag_decision
+    def _run_episode2(self, iteration: int, episode: int) -> Dict:
+        ''' Τρέχει 1 επεισόδιο και συλλέγει δεδομένα '''
+        state = self.env.reset()
+        self.prev_x_pos = 40  # Reset position
+        max_x = 0             # NEW: track max x_pos reached
+
+        done = False
+        total_reward = 0
+        step_count = 0
+        learner_actions = []
+        expert_actions = []
+
+        while not done and step_count < self.config.max_episode_steps:
+            if self.config.render:
+                self.renderer.render()
+
+            learner_action = self.learner.act(state)
+
+            # Optional noise injection
+            if np.random.random() < self.config.noise_probability:
+                learner_action = np.random.randint(self.n_actions)
+
+            expert_action = self.expert.act(state, training=False)
+
+            learner_actions.append(learner_action)
+            expert_actions.append(expert_action)
+
+            next_state, reward, done, info = self.env.step(learner_action)
+            reward = self._shape_reward(reward, info, done)
+
+            # Track max x position
+            x_pos = info.get("x_pos", 0)
+            max_x = max(max_x, x_pos)
+
+            self.learner.remember(state, expert_action, reward, next_state, done)
+
+            state = next_state
+            total_reward += reward
+            step_count += 1
+
+            # Early stop if Mario dies
+            if done or info.get("life", 2) < 2:
+                break
+
+        # Final expert agreement
+        agreement = self._calculate_expert_agreement(learner_actions, expert_actions)
+        self.expert_agreement_window.append(agreement)
+
+        flag_captured = max_x >= 3150  # STRONG flag detection
+
+        episode_info = {
+            'reward': total_reward,
+            'steps': step_count,
+            'agreement': agreement,
+            'final_x_pos': max_x,
+            'flag_get': flag_captured
+        }
+
+        print(f'[Episode {episode + 1:03}] '
+            f'Reward: {total_reward:8.2f} | '
+            f'Steps: {step_count:4} | '
+            f'Agreement: {agreement:.3f} | '
+            f'Max X: {max_x:4} | '
+            f'Flag: {flag_captured}')
+
+        return episode_info
+        
+    def _run_episode1(self, iteration: int, episode: int) -> Dict:
         ''' Τρέχει 1 επεισόδιο και συλλέγει δεδομένα '''
         state = self.env.reset()
         self.prev_x_pos = 40 # Αρχική θέση Mario
@@ -289,7 +496,20 @@ class DaggerTrainer:
                 self.metrics['episode_rewards'].append(reward_temp)
                 self.metrics['expert_agreement'].append(episode_info['agreement'])
                 self.metrics['episode_lengths'].append(episode_info['steps'])
-
+                if reward_temp > 3400: #save immediately!
+                    print(f'-> Episode {episode+1} Reward: {reward_temp:.2f} - '
+                          f'Agreement: {episode_info["agreement"]:.3f} - '
+                          f'Steps: {episode_info["steps"]}')
+                    # Save the model that just learned from the successful episode
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    flag_model_path = os.path.join(
+                        self.save_dir,
+                        f'mario_FLAG_iter{iteration+1}_ep{episode+1}_{int(reward_temp)}_{timestamp}.pth'
+                    )
+                    self.learner.save_model(flag_model_path)
+                    print(f'-> FLAG MODEL SAVED IMMEDIATELY: {flag_model_path}')
+                    print(f'   Score: {reward_temp:.2f}, Loss: {immediate_loss:.6f}')
+                
                 # IMMEDIATE FLAG SAVE - Right after episode completion
                 if episode_info['flag_get']:
                     print(f'* FLAG CAPTURED in episode {episode+1}! Score: {reward_temp:.2f}')
@@ -355,7 +575,7 @@ class DaggerTrainer:
 
 def main():
     config = DaggerConfig(
-        iterations                = 200,
+        iterations                = 400, #800,200
         episodes_per_iter         = 20,
         training_batches_per_iter = 200,
         expert_model_path= os.path.join(

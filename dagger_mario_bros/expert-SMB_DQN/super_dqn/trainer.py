@@ -189,17 +189,17 @@ class MarioTrainer:
         Parameters:
          - env_unresponsive_: True -> ελέγχει αν το περιβάλλον είναι "κολλημένο" - bugged.
         '''
-        if model_path is None:
-            self.agent = test_agent
-        else:
+        if model_path is not None:
             self.agent.load_model(model_path)
+        else:
+            self.agent = test_agent
         
         self.agent.epsilon = 0 # Όχι exploration κατά το testing!
 
         if show_controller:
             controller_overlay = NESControllerOverlay()
         
-        if model_path is None:
+        if model_path is not None:
             print(f'Δοκιμή μοντέλου για {episodes} επεισόδιο...')
 
         test_scores = []

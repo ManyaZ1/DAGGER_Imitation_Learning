@@ -295,25 +295,25 @@ class DaggerTrainer:
                 # IMMEDIATE FLAG SAVE - Right after episode completion
                 if episode_info['flag_get']:
                     trainer = MarioTrainer(printless = True)
-                    if trainer.test(
-                        test_agent = self.learner, render = False, env_unresponsive = True
-                    ):
-                        print(f'* FLAG CAPTURED in episode {episode+1}! Score: {reward_temp:.2f}')
-                        
-                        # Train immediately with current memory
-                        print(f'Training learner immediately with '
-                            f'{len(getattr(self.learner, "dagger_memory", self.learner.dagger_memory))} experiences...')
-                        immediate_loss = self._train_learner_immediate()
-                        
-                        # Save the model that just learned from the successful episode
-                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                        flag_model_path = os.path.join(
-                            self.save_dir,
-                            f'mario_FLAG_iter{iteration+1}_ep{episode+1}_{int(reward_temp)}_{timestamp}.pth'
-                        )
-                        self.learner.save_model(flag_model_path)
-                        print(f'-> FLAG MODEL SAVED IMMEDIATELY: {flag_model_path}')
-                        print(f'   Score: {reward_temp:.2f}, Loss: {immediate_loss:.6f}')
+                    if not trainer.test(test_agent = self.learner, render = False, env_unresponsive = True):
+                        continue
+
+                    print(f'* FLAG CAPTURED in episode {episode+1}! Score: {reward_temp:.2f}')
+                    
+                    # Train immediately with current memory
+                    print(f'Training learner immediately with '
+                        f'{len(getattr(self.learner, "dagger_memory", self.learner.dagger_memory))} experiences...')
+                    immediate_loss = self._train_learner_immediate()
+                    
+                    # Save the model that just learned from the successful episode
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    flag_model_path = os.path.join(
+                        self.save_dir,
+                        f'mario_FLAG_iter{iteration+1}_ep{episode+1}_{int(reward_temp)}_{timestamp}.pth'
+                    )
+                    self.learner.save_model(flag_model_path)
+                    print(f'-> FLAG MODEL SAVED IMMEDIATELY: {flag_model_path}')
+                    print(f'   Score: {reward_temp:.2f}, Loss: {immediate_loss:.6f}')
             
             # Regular training after all episodes (additional training)
             print(f'Final training with {len(self.learner.dagger_memory)} experiences...')

@@ -128,6 +128,9 @@ class MarioTrainer:
                 print(f'Best Average Score so far: {self.best_avg_score:.2f}')
 
             if done and info.get('flag_get', False) and total_reward > 3400:
+                if not self.test(test_agent = self.agent, render = False, env_unresponsive = False):
+                    continue
+                
                 # Το score πρέπει να είναι πάνω από 3400
                 # για να θεωρηθεί expert! Βάση δοκιμών!
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

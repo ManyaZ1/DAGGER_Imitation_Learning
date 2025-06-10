@@ -40,27 +40,23 @@ def main():
                 # the best model (at least for now...)!!!!!
         except:
             model_path = os.path.join(parrent_dir, 'models', 'mario_model_best.pth')
-        trainer.test(
-            model_path, episodes = 1, render = True, show_controller = True
-        )
     elif user_input == '1st_expert':
         model_path = os.path.join(parrent_dir, 'models', 'WORKING_MARIO_AGENT.pth')
-        trainer.test(
-            model_path, episodes = 1, render = True, show_controller = True
-        )
     elif user_input == '2nd_expert':
         model_path = os.path.join(parrent_dir, 'models', 'ep30000_MARIO_EXPERT.pth')
-        trainer.test(
-            model_path, episodes = 1, render = True, show_controller = True
-        )
     elif user_input == 'dagger':
         model_path = os.path.join(
             parrent_dir, '..', 'DAGGER', 'SUCCESS',
             'mario_FLAG_iter574_ep19_3425_20250609_072905-success.pth'
         )
+
+    try:
         trainer.test(
-            model_path, episodes = 1, render = True, show_controller = True
+            model_path, episodes = 1, render = True, show_controller = True,
+            env_unresponsive = True
         )
+    except:
+        pass
     
     return
 

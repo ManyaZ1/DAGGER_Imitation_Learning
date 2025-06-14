@@ -5,13 +5,18 @@ conda create -n mario python=3.8 -y
 conda activate mario
 
 # --- Install required Python packages via pip ---
-pip install -r requirements_mario.txt
 # Microsoft Visual C++ 14.0 or greater is required.
+
+pip install -r requirements_mario.txt
 or
 
 pip install gym==0.23.1
 pip install nes-py==8.1.8
 pip install gym-super-mario-bros==7.4.0
+pip install torch
+pip install opencv-python
+pip install matplotlib
+pip install seaborn
 
 # --- For CUDA-compatible version of PyTorch ---
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118

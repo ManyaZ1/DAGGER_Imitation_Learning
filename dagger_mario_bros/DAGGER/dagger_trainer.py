@@ -7,6 +7,8 @@ from dataclasses import dataclass
 import json
 from collections import deque
 from typing import Optional
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 base_dir = os.path.dirname(__file__)
 temp = os.path.abspath(
@@ -50,8 +52,7 @@ class DaggerConfig:
     stage:                     str = '1'
     render:                    bool = False
     save_frequency:            int = 1
-    max_episode_steps:         int = 4000
-    noise_probability:         float = 0.2
+    max_episode_steps:         int = 1000
 
 class DaggerTrainer:
     ''' DAGGER [Dataset Aggregation] trainer για τον Mario AI agent. '''
@@ -321,8 +322,8 @@ class DaggerTrainer:
 
                 # IMMEDIATE FLAG SAVE - Right after episode completion
                 if episode_info['flag_get']:
-                    trainer = MarioTrainer(printless = True)
-                    if not trainer.test(test_agent = self.learner, render = False, env_unresponsive = True):
+                    trainer = MarioTrainer(printless = True) # Το gym δεν είναι έμπιστο!!!
+                    if not trainer.test(test_agent = self.learner, render = False, env_unresponsive = False):
                         continue
 
                     print(f'* FLAG CAPTURED in episode {episode+1}! Score: {reward_temp:.2f}')
@@ -334,9 +335,10 @@ class DaggerTrainer:
                     
                     # Save the model that just learned from the successful episode
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    temp = self.config.observation_type if self.config.observation_type is not None else 'normal'
                     flag_model_path = os.path.join(
                         self.save_dir,
-                        f'mario_FLAG_iter{iteration+1}_ep{episode+1}_{int(reward_temp)}_{timestamp}.pth'
+                        f'mario_FLAG_iter{iteration+1}_ep{episode+1}_{int(reward_temp)}_{timestamp}_{temp}.pth'
                     )
                     self.learner.save_model(flag_model_path)
                     print(f'-> FLAG MODEL SAVED IMMEDIATELY: {flag_model_path}')
@@ -358,8 +360,6 @@ class DaggerTrainer:
             print(f'  Average Agreement: {avg_agreement:.3f}')
             print(f'  Best Iter Reward:  {max(iteration_rewards):.2f}')
             print(f'  Final Training Loss: {avg_loss:.6f}')
-            flag_count = sum(1 for r in iteration_rewards if r > 3000)  # Approximate flag count
-            print(f'  Flag Completions:  {flag_count}')
 
             # Regular checkpoint saves
             if (iteration + 1) % self.config.save_frequency == 0:
@@ -378,19 +378,177 @@ class DaggerTrainer:
         print(f'Best Average Reward: {self.best_reward:.2f}')
         print(f'Final Expert Agreement: {np.mean(list(self.expert_agreement_window)[-10:]):.3f}')
         print(f'Best Model: {best_model_path}')
+        
+        # Generate comprehensive plots
+        print('\n-> Generating training plots...')
+        plot_paths = self._plot_training_results()
+        print(f'All plots and summary saved in: {os.path.join(base_dir, "plots")}')
 
         return {
             'best_reward': self.best_reward,
             'best_model_path': best_model_path,
             'final_metrics': self.metrics,
-            'total_episodes': len(self.metrics['episode_rewards'])
+            'total_episodes': len(self.metrics['episode_rewards']),
+            'plot_paths': plot_paths
         }
+    
+    def _plot_training_results(self):
+        """Create comprehensive plots of training results and save to plots directory."""
+        # Create plots directory
+        plots_dir = os.path.join(base_dir, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        
+        # Set up the plotting style
+        plt.style.use('seaborn-v0_8')
+        sns.set_palette("husl")
+        
+        # Create a large figure with multiple subplots
+        fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+        fig.suptitle('DAGGER Training Results - Mario AI Agent', fontsize=16, fontweight='bold')
+        
+        # 1. Episode Rewards over Time
+        axes[0, 0].plot(self.metrics['episode_rewards'], alpha=0.6, linewidth=0.8)
+        # Add moving average
+        if len(self.metrics['episode_rewards']) > 10:
+            window_size = min(50, len(self.metrics['episode_rewards']) // 10)
+            moving_avg = np.convolve(self.metrics['episode_rewards'], 
+                                   np.ones(window_size)/window_size, mode='valid')
+            axes[0, 0].plot(range(window_size-1, len(self.metrics['episode_rewards'])), 
+                          moving_avg, color='red', linewidth=2, label=f'Moving Avg ({window_size})')
+            axes[0, 0].legend()
+        axes[0, 0].set_title('Episode Rewards Over Time')
+        axes[0, 0].set_xlabel('Episode')
+        axes[0, 0].set_ylabel('Reward')
+        axes[0, 0].grid(True, alpha=0.3)
+        
+        # 2. Iteration Average Rewards
+        axes[0, 1].plot(self.metrics['iteration_rewards'], marker='o', linewidth=2, markersize=4)
+        axes[0, 1].set_title('Average Reward per Iteration')
+        axes[0, 1].set_xlabel('Iteration')
+        axes[0, 1].set_ylabel('Average Reward')
+        axes[0, 1].grid(True, alpha=0.3)
+        
+        # 3. Expert Agreement over Time
+        axes[0, 2].plot(self.metrics['expert_agreement'], alpha=0.6, linewidth=0.8)
+        # Add moving average for agreement
+        if len(self.metrics['expert_agreement']) > 10:
+            window_size = min(50, len(self.metrics['expert_agreement']) // 10)
+            moving_avg = np.convolve(self.metrics['expert_agreement'], 
+                                   np.ones(window_size)/window_size, mode='valid')
+            axes[0, 2].plot(range(window_size-1, len(self.metrics['expert_agreement'])), 
+                          moving_avg, color='red', linewidth=2, label=f'Moving Avg ({window_size})')
+            axes[0, 2].legend()
+        axes[0, 2].set_title('Expert Agreement Over Time')
+        axes[0, 2].set_xlabel('Episode')
+        axes[0, 2].set_ylabel('Agreement Rate')
+        axes[0, 2].grid(True, alpha=0.3)
+        axes[0, 2].set_ylim(0, 1)
+        
+        # 4. Training Loss over Iterations
+        axes[1, 0].plot(self.metrics['training_losses'], marker='s', linewidth=2, markersize=4, color='orange')
+        axes[1, 0].set_title('Training Loss per Iteration')
+        axes[1, 0].set_xlabel('Iteration')
+        axes[1, 0].set_ylabel('Average Loss')
+        axes[1, 0].grid(True, alpha=0.3)
+        axes[1, 0].set_yscale('log')  # Log scale for better visualization
+        
+        # 5. Episode Lengths Distribution
+        axes[1, 1].hist(self.metrics['episode_lengths'], bins=30, alpha=0.7, edgecolor='black')
+        axes[1, 1].axvline(np.mean(self.metrics['episode_lengths']), color='red', linestyle='--', 
+                         linewidth=2, label=f'Mean: {np.mean(self.metrics["episode_lengths"]):.1f}')
+        axes[1, 1].set_title('Episode Length Distribution')
+        axes[1, 1].set_xlabel('Episode Length (Steps)')
+        axes[1, 1].set_ylabel('Frequency')
+        axes[1, 1].legend()
+        axes[1, 1].grid(True, alpha=0.3)
+        
+        # 6. Reward vs Agreement Scatter
+        axes[1, 2].scatter(self.metrics['expert_agreement'], self.metrics['episode_rewards'], 
+                         alpha=0.6, s=20)
+        axes[1, 2].set_title('Reward vs Expert Agreement')
+        axes[1, 2].set_xlabel('Expert Agreement')
+        axes[1, 2].set_ylabel('Episode Reward')
+        axes[1, 2].grid(True, alpha=0.3)
+        
+        # Add correlation coefficient
+        if len(self.metrics['expert_agreement']) > 1:
+            corr = np.corrcoef(self.metrics['expert_agreement'], self.metrics['episode_rewards'])[0, 1]
+            axes[1, 2].text(0.05, 0.95, f'Correlation: {corr:.3f}', 
+                          transform=axes[1, 2].transAxes, fontsize=10,
+                          bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
+        
+        plt.tight_layout()
+        
+        # Save the main plot
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        plot_path = os.path.join(plots_dir, f'dagger_training_results_{timestamp}.png')
+        plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+        print(f'Main training plots saved: {plot_path}')
+        
+        # Create a separate figure for detailed reward analysis
+        plt.figure(figsize=(15, 10))
+        
+        # Subplot 3: Performance improvement over iterations
+        plt.subplot(2, 2, 3)
+        if len(self.metrics['iteration_rewards']) > 1:
+            plt.plot(self.metrics['iteration_rewards'], marker='o', linewidth=2)
+            plt.fill_between(range(len(self.metrics['iteration_rewards'])), 
+                           self.metrics['iteration_rewards'], alpha=0.3)
+        plt.title('Performance Improvement Over Iterations')
+        plt.xlabel('Iteration')
+        plt.ylabel('Average Reward')
+        plt.grid(True, alpha=0.3)
+        
+        # Subplot 4: Training efficiency (reward vs loss)
+        plt.subplot(2, 2, 4)
+        if len(self.metrics['training_losses']) > 0 and len(self.metrics['iteration_rewards']) > 0:
+            # Normalize both metrics for comparison
+            norm_rewards = np.array(self.metrics['iteration_rewards']) / max(self.metrics['iteration_rewards'])
+            norm_losses = np.array(self.metrics['training_losses']) / max(self.metrics['training_losses'])
+            
+            plt.plot(norm_rewards, label='Normalized Rewards', linewidth=2)
+            plt.plot(norm_losses, label='Normalized Loss', linewidth=2)
+            plt.title('Training Efficiency: Rewards vs Loss')
+            plt.xlabel('Iteration')
+            plt.ylabel('Normalized Value')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        
+        # Save the detailed analysis plot
+        detailed_plot_path = os.path.join(plots_dir, f'dagger_detailed_analysis_{timestamp}.png')
+        plt.savefig(detailed_plot_path, dpi=300, bbox_inches='tight')
+        print(f'Detailed analysis plots saved: {detailed_plot_path}')
+        
+        # Create a summary statistics text file
+        stats_path = os.path.join(plots_dir, f'training_summary_{timestamp}.txt')
+        with open(stats_path, 'w') as f:
+            f.write("DAGGER Training Summary\n")
+            f.write("=" * 50 + "\n\n")
+            f.write(f"Total Episodes: {len(self.metrics['episode_rewards'])}\n")
+            f.write(f"Total Iterations: {len(self.metrics['iteration_rewards'])}\n")
+            f.write(f"Best Episode Reward: {max(self.metrics['episode_rewards']):.2f}\n")
+            f.write(f"Average Episode Reward: {np.mean(self.metrics['episode_rewards']):.2f}\n")
+            f.write(f"Final Iteration Reward: {self.metrics['iteration_rewards'][-1]:.2f}\n")
+            f.write(f"Average Expert Agreement: {np.mean(self.metrics['expert_agreement']):.3f}\n")
+            f.write(f"Final Expert Agreement: {np.mean(self.metrics['expert_agreement'][-10:]):.3f}\n")
+            f.write(f"Average Training Loss: {np.mean(self.metrics['training_losses']):.6f}\n")
+            f.write(f"Final Training Loss: {self.metrics['training_losses'][-1]:.6f}\n")
+            f.write(f"Average Episode Length: {np.mean(self.metrics['episode_lengths']):.1f}\n")
+            
+        print(f'Training summary saved: {stats_path}')
+        
+        # Close all figures to free memory
+        plt.close('all')
+        
+        return plot_path, detailed_plot_path, stats_path
 
 def main():
     config = DaggerConfig(
         observation_type          = 'partial',  # partial, noisy, downsampled...
-        iterations                = 800,
-        episodes_per_iter         = 20,
+        iterations                = 5,
+        episodes_per_iter         = 5,
         training_batches_per_iter = 200,
         expert_model_path= os.path.join(
             base_dir, '..',
@@ -399,7 +557,7 @@ def main():
         world                    = '1',
         stage                    = '1',
         render                   = False,
-        save_frequency           = 25,
+        save_frequency           = 1000,
         max_episode_steps        = 800, # Στα 300 κάπου τερματίζεται η πίστα!
     )
     

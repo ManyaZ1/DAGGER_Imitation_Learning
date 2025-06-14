@@ -40,12 +40,12 @@ class DaggerConfig:
     Configuration κλάση για τις παραμέτρους εκπαίδευσης DAGGER.
     Χρησιμοποιείται αυτή η τεχνική για αποφυγή global μεταβλητών!
     '''
-    observation_type:          Optional[str] = None # partial, noisy, downsampled...
-    noise_level:               float = 0.1 # Χρησιμοποιείται για το noisy observation_type!
     iterations:                int
     episodes_per_iter:         int
     training_batches_per_iter: int
     expert_model_path:         str
+    observation_type:          Optional[str] = None # partial, noisy, downsampled...
+    noise_level:               float = 0.1 # Χρησιμοποιείται για το noisy observation_type!
     world:                     str = '1'
     stage:                     str = '1'
     render:                    bool = False
@@ -92,6 +92,11 @@ class DaggerTrainer:
         self.expert.load_model(self.config.expert_model_path)
 
         print('\nLearner/DAGGER:')
+        if self.config.observation_type == 'partial':
+            self.state_shape = list(self.state_shape)
+            self.state_shape[0] = 2
+            self.state_shape = tuple(self.state_shape)
+            print(f'- State shape for learner: {self.state_shape} - PARTIAL')
         self.learner = DaggerMarioAgent(self.state_shape, self.n_actions)
         
         # Optional observation wrapper

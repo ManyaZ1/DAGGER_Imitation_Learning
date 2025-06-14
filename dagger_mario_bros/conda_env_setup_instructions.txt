@@ -5,8 +5,9 @@ conda create -n mario python=3.8 -y
 conda activate mario
 
 # --- Install required Python packages via pip ---
-pip install -r requirements_mario.txt
 # Microsoft Visual C++ 14.0 or greater is required.
+
+pip install -r requirements_mario.txt
 or
 
 pip install gym==0.23.1

@@ -546,7 +546,8 @@ class DaggerTrainer:
 
 def main():
     config = DaggerConfig(
-        observation_type          = 'partial',  # partial, noisy, downsampled...
+        observation_type          = 'noisy',  # partial, noisy, downsampled...
+        noise_level               = 0.1,      # Χρησιμοποιείται μόνο για noisy observation_type!
         iterations                = 500,
         episodes_per_iter         = 20,
         training_batches_per_iter = 200,

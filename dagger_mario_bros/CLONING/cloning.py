@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import torch
 
-# Assuming your existing files are importable
+
 base_dir        = os.path.dirname(__file__)              # …/CLONING
 pkg_parent = os.path.abspath(os.path.join(base_dir, '..', 'expert-SMB_DQN'))
 sys.path.insert(0, pkg_parent)   
@@ -122,7 +122,7 @@ class MarioBehaviorCloningExperiment:
             safe_name = scenario_name.lower()
             safe_name = safe_name.replace(" ", "_").replace("(", "").replace(")", "")
             safe_name = safe_name.replace("/", "_").replace("\\", "_")
-            agent_path = f'bc_agent_{safe_name}.pth'
+            agent_path = f'models/bc_agent_{safe_name}.pth'
             #agent_path = f'bc_agent_{scenario_name.replace(" ", "_").replace("(", "").replace(")", "")}.pth'
             torch.save(bc_agent.network.state_dict(), agent_path)
             
@@ -312,7 +312,7 @@ class MarioBehaviorCloningExperiment:
         print("="*60)
         
         # Paths
-        demonstrations_path = f'mario_demonstrations_{self.world}_{self.stage}.pkl'
+        demonstrations_path = f'models/mario_demonstrations_{self.world}_{self.stage}.pkl'
         
         # Step 1: Collect demonstrations
         demonstrations = self.step1_collect_expert_demonstrations(
@@ -355,9 +355,22 @@ if __name__ == "__main__":
     # Initialize experiment
     experiment = MarioBehaviorCloningExperiment(world='1', stage='1', action_type='simple')
     
-    # Run experiment (you need to provide path to your trained expert model)
-    expert_model_path = 'ep30000_MARIO_EXPERT.pth'  # Adjust path
+    # # Run experiment (you need to provide path to your trained expert model)
+    # current_dir = os.path.dirname(__file__)
+    # # Go one directory up
+    # parent_dir = os.path.dirname(current_dir)
+
+    # # Now point to the file in expert/models (from the parent dir)
+    # expert_model_path = os.path.join(parent_dir, "expert-SMB_DQN", "models", 'ep30000_MARIO_EXPERT.pth')
     
+    base_dir        = os.path.dirname(__file__)              # …/CLONING
+    temp_dir = os.path.abspath(os.path.join(base_dir, '..', 'expert-SMB_DQN'))
+
+    super_dqn_path  = os.path.abspath(os.path.join(base_dir, '..',
+                                               'expert-SMB_DQN',
+                                               'models'))   
+    expert_model_path = os.path.join(super_dqn_path,'ep30000_MARIO_EXPERT.pth')  # Adjust path
+    print( expert_model_path)
     try:
         results = experiment.run_full_experiment(expert_model_path)
         print("Experiment completed successfully!")

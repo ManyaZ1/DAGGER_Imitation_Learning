@@ -304,7 +304,7 @@ class BehaviorCloningAgent:
         
         # Save plot
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        plt.savefig(f'bc_training_progress_{timestamp}.png', dpi=300, bbox_inches='tight')
+        plt.savefig(f'plots_bc/bc_training_progress_{timestamp}.png', dpi=300, bbox_inches='tight') #
         plt.show()
     
     def save_model(self, filepath: str) -> None:

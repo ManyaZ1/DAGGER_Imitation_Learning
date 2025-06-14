@@ -366,8 +366,8 @@ class MarioModelVisualizer:
         self.visualize_saliency_map(sample_state)
         
         # 6. Q-values heatmap
-        print("\n5. Analyzing Q-values across states...")
-        self.visualize_q_values_heatmap(num_episodes=20)
+        # print("\n5. Analyzing Q-values across states...")
+        # self.visualize_q_values_heatmap(num_episodes=20)
         
         # 7. Decision making analysis
         print("\n6. Analyzing decision-making patterns...")
@@ -378,7 +378,7 @@ class MarioModelVisualizer:
 # Usage example:
 if __name__ == "__main__":
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    MODEL_PATH = os.path.join(BASE_DIR, 'models', 'mario_model_best.pth')
+    MODEL_PATH = os.path.join(BASE_DIR, 'models', 'ep30000_MARIO_EXPERT.pth')
     
     # Create visualizer
     visualizer = MarioModelVisualizer(MODEL_PATH)

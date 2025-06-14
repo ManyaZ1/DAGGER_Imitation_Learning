@@ -1,15 +1,19 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
 
 import numpy as np
 import pickle
-import random
 from typing import List, Dict, Optional, Tuple
 import matplotlib.pyplot as plt
 from datetime import datetime
 from sklearn.model_selection import train_test_split
+
+import os, sys
+base_dir = os.path.dirname(__file__)
+temp     = os.path.abspath(os.path.join(base_dir, '..'))
+sys.path.append(temp)
+from observation_wrapper import PartialObservationWrapper
 
 class ExpertDemonstrationCollector:
     """Συλλέκτης expert demonstrations για behavior cloning"""
@@ -72,38 +76,6 @@ class ExpertDemonstrationCollector:
             print(f"Demonstrations αποθηκεύτηκαν στο {save_path}")
         
         return demonstrations
-
-
-class PartialObservationWrapper:
-    """Wrapper για διαφορετικά observation scenarios"""
-    
-    def __init__(self, obs_type: str, noise_level: float = 0.1):
-        self.obs_type = obs_type
-        self.noise_level = noise_level
-        
-    def transform_observation(self, state: np.ndarray) -> np.ndarray:
-        """Μετασχηματισμός observation βάσει του τύπου"""
-        
-        if self.obs_type == 'partial':
-            # Κρατάμε μόνο 2 από τα 4 channels (π.χ. τα 2 πιο πρόσφατα frames)
-            return state[:2, :, :]
-            
-        elif self.obs_type == 'noisy':
-            # Προσθήκη Gaussian noise
-            noise = np.random.normal(0, self.noise_level, state.shape)
-            noisy_state = state + noise
-            return np.clip(noisy_state, 0, 1)  # Clip στο [0,1] range
-            
-        elif self.obs_type == 'downsampled':
-            # Downsampling κάθε channel
-            downsampled = np.zeros((state.shape[0], 42, 42))  # Half size
-            for i in range(state.shape[0]):
-                downsampled[i] = state[i][::2, ::2]  # Take every 2nd pixel
-            return downsampled
-            
-        else:
-            return state
-
 
 class BehaviorCloningNetwork(nn.Module):
     """Νευρωνικό δίκτυο για behavior cloning"""

@@ -6,6 +6,7 @@ import numpy as np
 import torch.optim as optim
 from collections import deque
 import torch.nn.functional as F
+from typing import Optional
 
 base_dir = os.path.dirname(__file__)
 temp = os.path.abspath(
@@ -13,6 +14,12 @@ temp = os.path.abspath(
 )
 sys.path.append(temp)
 from agent import MarioAgent # Import og agent
+
+# Προσθήκη του observation wrapper
+base_dir = os.path.dirname(__file__)
+temp     = os.path.abspath(os.path.join(base_dir, '..'))
+sys.path.append(temp)
+from observation_wrapper import PartialObservationWrapper
 
 class DaggerMarioAgent(MarioAgent):
     '''
@@ -52,41 +59,45 @@ class DaggerMarioAgent(MarioAgent):
 
         return
         
-    def replay(self) -> float:
+    def replay(self, wrapper: Optional[PartialObservationWrapper] = None) -> Optional[float]:
         '''
         Εκπαίδευση DAGGER - Supervised learning με expert demonstrations
-        
+
         Returns:
             loss: Training loss, or None αν τα δεδομένα δεν επαρκούν
         '''
         if len(self.dagger_memory) < self.batch_size:
             return None
-        
+
         # Sample batch από DAGGER memory (state, expert_action pairs)
         batch = random.sample(self.dagger_memory, self.batch_size)
-        
-        states         = np.array([transition[0] for transition in batch])
-        expert_actions = np.array([transition[1] for transition in batch])
-        
+
+        states         = [transition[0] for transition in batch]
+        expert_actions = [transition[1] for transition in batch]
+
+        # Εφαρμογή observation wrapper αν υπάρχει
+        if wrapper:
+            states = [wrapper.transform_observation(s) for s in states]
+
         # Μετατροπή σε tensors
-        states         = torch.FloatTensor(states).to(self.device)
-        expert_actions = torch.LongTensor(expert_actions).to(self.device)
-        
-        # Forward pass: Q-values -> action logits
-        action_logits = self.q_network(states)
-        
-        # Supervised learning loss: μάθε να προβλέπεις τα actions του expert
-        loss = F.cross_entropy(action_logits, expert_actions)
-        
+        states_tensor = torch.FloatTensor(np.array(states)).to(self.device)
+        expert_actions_tensor = torch.LongTensor(expert_actions).to(self.device)
+
+        # Forward pass
+        action_logits = self.q_network(states_tensor)
+
+        # Supervised loss
+        loss = F.cross_entropy(action_logits, expert_actions_tensor)
+
         # Backpropagation
         self.dagger_optimizer.zero_grad()
         loss.backward()
-        
-        # Gradient clipping (inherited)
-        torch.nn.utils.clip_grad_norm_(self.q_network.parameters(), self.gradient_clip)
-        
+        # clip_grad_norm_ -> inherited!
+        torch.nn.utils.clip_grad_norm_(
+            self.q_network.parameters(), self.gradient_clip
+        )
         self.dagger_optimizer.step()
-        
+
         return loss.item()
     
     def act(self, state: np.ndarray, training: bool = True) -> int:

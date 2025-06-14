@@ -6,6 +6,7 @@ from typing import Dict, List
 from dataclasses import dataclass
 import json
 from collections import deque
+from typing import Optional
 
 base_dir = os.path.dirname(__file__)
 temp = os.path.abspath(
@@ -23,6 +24,12 @@ import gym_super_mario_bros
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 from nes_py.wrappers import JoypadSpace
 
+# Προσθήκη του observation wrapper
+base_dir = os.path.dirname(__file__)
+temp     = os.path.abspath(os.path.join(base_dir, '..'))
+sys.path.append(temp)
+from observation_wrapper import PartialObservationWrapper
+
 # Γιατί μας τα ζάλιζε ένα gym...
 import warnings
 warnings.filterwarnings('ignore', category = UserWarning, module = 'gym')
@@ -33,6 +40,8 @@ class DaggerConfig:
     Configuration κλάση για τις παραμέτρους εκπαίδευσης DAGGER.
     Χρησιμοποιείται αυτή η τεχνική για αποφυγή global μεταβλητών!
     '''
+    observation_type:          Optional[str] = None # partial, noisy, downsampled...
+    noise_level:               float = 0.1 # Χρησιμοποιείται για το noisy observation_type!
     iterations:                int
     episodes_per_iter:         int
     training_batches_per_iter: int
@@ -85,6 +94,14 @@ class DaggerTrainer:
         print('\nLearner/DAGGER:')
         self.learner = DaggerMarioAgent(self.state_shape, self.n_actions)
         
+        # Optional observation wrapper
+        self.observation_wrapper = None
+        if self.config.observation_type:
+            self.observation_wrapper = PartialObservationWrapper(
+                obs_type    = self.config.observation_type,
+                noise_level = self.config.noise_level
+            )
+
         # Οπτικοποίηση αν ζητηθεί
         if self.config.render:
             self.renderer = MarioRenderer(self.env, scale = 3.)
@@ -170,14 +187,19 @@ class DaggerTrainer:
             if self.config.render:
                 self.renderer.render()
             
-            # --- Ενέργειες από τον learner και τον expert ---
-            learner_action = self.learner.act(state)
-            # Random actions during training from learner - NOISE INJECTION!
-            if np.random.random() < self.config.noise_probability:
-                learner_action = np.random.randint(self.n_actions)
 
-            expert_action  = self.expert.act(state, training = False)
+
+            # --- Ενέργειες από τον learner και τον expert ---
+            # Apply wrapper only for learner
+            observed_state = self.observation_wrapper.transform_observation(state) \
+                             if self.observation_wrapper else state
+            # Learner acts on the partial/noisy observation
+            learner_action = self.learner.act(observed_state)
+            # Expert acts on the full observation
+            expert_action = self.expert.act(state, training=False)
             
+
+
             # Διατήρηση των ενεργειών για agreement calculation!
             learner_actions.append(learner_action)
             expert_actions.append(expert_action)
@@ -224,7 +246,7 @@ class DaggerTrainer:
         batch_count = 0
         
         for batch in range(self.config.training_batches_per_iter):
-            loss = self.learner.replay()
+            loss = self.learner.replay(wrapper=self.observation_wrapper)
             if loss is not None:
                 total_loss  += loss
                 batch_count += 1
@@ -236,11 +258,11 @@ class DaggerTrainer:
     
     def _train_learner_immediate(self, num_batches: int = 3) -> float:
         """Train learner immediately with specified number of batches."""
-        total_loss = 0.
+        total_loss  = 0.
         batch_count = 0
         
         for batch in range(num_batches):
-            loss = self.learner.replay()
+            loss = self.learner.replay(wrapper=self.observation_wrapper)
             if loss is not None:
                 total_loss += loss
                 batch_count += 1

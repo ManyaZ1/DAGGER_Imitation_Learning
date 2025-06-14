@@ -547,8 +547,8 @@ class DaggerTrainer:
 def main():
     config = DaggerConfig(
         observation_type          = 'partial',  # partial, noisy, downsampled...
-        iterations                = 5,
-        episodes_per_iter         = 5,
+        iterations                = 500,
+        episodes_per_iter         = 20,
         training_batches_per_iter = 200,
         expert_model_path= os.path.join(
             base_dir, '..',

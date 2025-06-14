@@ -34,7 +34,7 @@ class ExpertDemonstrationCollector:
             done = False
             steps = 0
             
-            while not done and steps < 5000:  # Max steps to prevent infinite loops
+            while not done and steps < 1000:  # Max steps to prevent infinite loops
                 # Expert επιλέγει action (χωρίς exploration)
                 action = self.expert_agent.act(state, training=False)
                 

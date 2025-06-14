@@ -383,6 +383,7 @@ class DaggerTrainer:
 
 def main():
     config = DaggerConfig(
+        observation_type          = 'partial',  # partial, noisy, downsampled...
         iterations                = 800,
         episodes_per_iter         = 20,
         training_batches_per_iter = 200,

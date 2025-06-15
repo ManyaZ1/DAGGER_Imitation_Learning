@@ -1,0 +1,9 @@
+-----evaluation_log_noisy_obs_sigma=0.1.txt---------
+
+✅ Ολοκληρώθηκε! Score: 3064.0, X: 3161, Flag: True
+
+✅ Ολοκληρώθηκε! Score: 1566.0, X: 1666, Flag: False
+
+✅ Ολοκληρώθηκε! Score: 1434.0, X: 1529, Flag: False
+
+✅ Ολοκληρώθηκε! Score: 3064.0, X: 3161, Flag: True

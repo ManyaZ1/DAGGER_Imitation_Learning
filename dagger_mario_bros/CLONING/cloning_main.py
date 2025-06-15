@@ -351,7 +351,7 @@ class MarioBehaviorCloningExperiment:
             'training_results': training_results,
             'evaluation_results': evaluation_results
         }
-    def plot_all_agents_validation_accuracy(training_results_dict):
+    def plot_all_agents_validation_accuracy(self,training_results_dict):
         plt.figure(figsize=(12, 6))
         for name, agent in training_results_dict.items():
             epochs = range(1, len(agent.validation_accuracies) + 1)
@@ -390,6 +390,15 @@ if __name__ == "__main__":
     try:
         results = experiment.run_full_experiment(expert_model_path)
         print("Experiment completed successfully!")
-    except FileNotFoundError:
-        print(f"Expert model not found at {expert_model_path}")
-        print("Please train an expert model first using your existing trainer!")
+    except Exception as e:
+        print(f"❌ Error during experiment run: {type(e).__name__} — {e}")
+        import traceback
+        traceback.print_exc()
+        raise  # re-raise to see full traceback
+    # except FileNotFoundError:
+    #     print(f"[LINE 394] Expert model not found at {expert_model_path}")
+    #     print("Please train an expert model first using your existing trainer!")
+    # except Exception as e:
+    #     print(f" Unexpected error: {type(e).__name__} — {e}")
+    #     import traceback
+    #     traceback.print_exc()

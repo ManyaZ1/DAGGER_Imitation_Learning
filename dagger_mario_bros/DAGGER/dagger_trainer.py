@@ -301,6 +301,7 @@ class DaggerTrainer:
         '''Βασική συνάρτηση/loop εκπαίδευσης DAGGER.'''
         print('-> Ενάρξη εκπαίδευσης DAGGER για Mario AI agent...')
 
+        trainer = MarioTrainer(printless = True) # Το gym δεν είναι έμπιστο!!!
         best_model_path = None
         for iteration in range(self.config.iterations):
             print(f'\nIteration: {iteration+1}/{self.config.iterations}')
@@ -322,8 +323,20 @@ class DaggerTrainer:
 
                 # IMMEDIATE FLAG SAVE - Right after episode completion
                 if episode_info['flag_get']:
-                    trainer = MarioTrainer(printless = True) # Το gym δεν είναι έμπιστο!!!
-                    if not trainer.test(test_agent = self.learner, render = False, env_unresponsive = True):
+                    success   = False
+                    tries_num = 1
+                    temp      = None
+                    if self.config.observation_type == 'noisy':
+                        tries_num = 3 # 3 tries if noise exists
+                        temp      = self.observation_wrapper
+                    for _ in range(tries_num):
+                        if trainer.test(
+                            test_agent = self.learner, render = True,
+                            env_unresponsive = True, observation_wrapper = temp
+                        ):
+                            success = True
+                            break
+                    if not success:
                         continue
 
                     print(f'* FLAG CAPTURED in episode {episode+1}! Score: {reward_temp:.2f}')
@@ -547,10 +560,10 @@ class DaggerTrainer:
 def main():
     config = DaggerConfig(
         observation_type          = 'noisy',  # partial, noisy, downsampled...
-        noise_level               = 0.1,      # Χρησιμοποιείται μόνο για noisy observation_type!
-        iterations                = 500,
-        episodes_per_iter         = 20,
-        training_batches_per_iter = 200,
+        noise_level               = 0.2,      # Χρησιμοποιείται μόνο για noisy observation_type!
+        iterations                = 800,
+        episodes_per_iter         = 15,
+        training_batches_per_iter = 300,
         expert_model_path= os.path.join(
             base_dir, '..',
             'expert-SMB_DQN', 'models', 'ep30000_MARIO_EXPERT.pth'
@@ -558,7 +571,7 @@ def main():
         world                    = '1',
         stage                    = '1',
         render                   = False,
-        save_frequency           = 1000,
+        save_frequency           = 400,
         max_episode_steps        = 800, # Στα 300 κάπου τερματίζεται η πίστα!
     )
     

@@ -36,12 +36,12 @@ class DaggerMarioAgent(MarioAgent):
         super().__init__(*args, **kwargs)
         
         # DAGGER μνήμη για ζεύγη (state, expert_action)
-        self.dagger_memory = deque(maxlen = 100000)
+        self.dagger_memory = deque(maxlen = 50000)
         
         # Ξεχωριστός optimizer για supervised learning (x2 learning rate)
         self.dagger_optimizer = optim.Adam(
             self.q_network.parameters(), 
-            lr = self.learning_rate * 2
+            lr = self.learning_rate * 1.5
         )
         
         return
@@ -113,8 +113,13 @@ class DaggerMarioAgent(MarioAgent):
             action_logits = self.q_network(state_tensor)
             
             if training: # Θέλουμε exploration!
-                action_probs = F.softmax(action_logits, dim = 1)
-                action       = torch.multinomial(action_probs, 1).item()
+                # Epsilon-greedy (recommended for DAGGER)
+                if random.random() < self.epsilon:
+                    # Random exploration
+                    action = random.randint(0, action_logits.size(1) - 1)
+                else:
+                    # Greedy action based on current policy
+                    action = action_logits.argmax().item()
             else: # Greedy policy
                 action = action_logits.argmax().item()
         

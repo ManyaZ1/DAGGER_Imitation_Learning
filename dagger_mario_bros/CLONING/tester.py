@@ -18,6 +18,7 @@ agent_choices = {
     "3": ("noisy_obs_sigma=0.1",   os.path.join(base_dir, "models","bc_agent_noisy_obs_sigma=0.1.pth"),    PartialObservationWrapper("noisy", noise_level=0.1)),
     "4": ("noisy_obs_sigma=0.2",   os.path.join(base_dir, "models","bc_agent_noisy_obs_sigma=0.2.pth"),    PartialObservationWrapper("noisy", noise_level=0.2)),
     "5": ("downsampled",       os.path.join(base_dir, "models","bc_agent_downsampled.pth"),        PartialObservationWrapper("downsampled")),
+    "6": ("noisy_obs_sigma=0.1_ep200", os.path.join(base_dir, "model_sigma0.1_200epochs", "bc_agent.pth"), PartialObservationWrapper("noisy", noise_level=0.1))
 }
 
 

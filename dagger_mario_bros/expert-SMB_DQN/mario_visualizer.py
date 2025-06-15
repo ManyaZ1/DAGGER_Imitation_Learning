@@ -26,18 +26,18 @@ class MarioDQNVisualizer:
         """Load the saved model data"""
         try:
             self.data = torch.load(self.model_path, map_location='cpu')
-            print(f"✅ Model data loaded successfully from {self.model_path}")
-            print(f"📊 Episodes trained: {len(self.data.get('scores', []))}")
-            print(f"🎯 Final epsilon: {self.data.get('epsilon', 'N/A')}")
+            print(f" Model data loaded successfully from {self.model_path}")
+            print(f" Episodes trained: {len(self.data.get('scores', []))}")
+            print(f" Final epsilon: {self.data.get('epsilon', 'N/A')}")
         except Exception as e:
-            print(f"❌ Error loading model: {e}")
+            print(f" Error loading model: {e}")
             raise
     
     def plot_episode_scores(self, figsize: Tuple[int, int] = (12, 6)) -> None:
         """Plot episode scores over time"""
         scores = self.data.get('scores', [])
         if not scores:
-            print("⚠️ No scores data found in model file")
+            print("[WARNING] No scores data found in model file")
             return
         
         plt.figure(figsize=figsize)
@@ -81,7 +81,7 @@ class MarioDQNVisualizer:
         avg_scores = self.data.get('avg_scores', [])
         
         if not scores:
-            print("⚠️ No scores data found")
+            print("[WARNING] No scores data found")
             return
         
         plt.figure(figsize=figsize)
@@ -128,7 +128,7 @@ class MarioDQNVisualizer:
         final_epsilon = self.data.get('epsilon', min_epsilon)
         
         if not scores:
-            print("⚠️ No episode data found")
+            print("[WARNING] No episode data found")
             return
         
         num_episodes = len(scores)
@@ -171,7 +171,7 @@ class MarioDQNVisualizer:
         """Plot comprehensive performance metrics"""
         scores = self.data.get('scores', [])
         if not scores:
-            print("⚠️ No scores data found")
+            print("[WARNING] No scores data found")
             return
         
         fig, axes = plt.subplots(2, 2, figsize=figsize)
@@ -236,27 +236,27 @@ class MarioDQNVisualizer:
         """Print a summary of training statistics"""
         scores = self.data.get('scores', [])
         if not scores:
-            print("⚠️ No scores data found")
+            print("[WARNING] No scores data found")
             return
         
         print("\n" + "="*50)
-        print("🎮 SUPER MARIO BROS DQN TRAINING SUMMARY")
+        print(" SUPER MARIO BROS DQN TRAINING SUMMARY")
         print("="*50)
-        print(f"📊 Total Episodes: {len(scores)}")
-        print(f"🏆 Best Score: {max(scores):.1f}")
-        print(f"📉 Worst Score: {min(scores):.1f}")
-        print(f"📈 Average Score: {np.mean(scores):.1f}")
-        print(f"📊 Median Score: {np.median(scores):.1f}")
-        print(f"📏 Standard Deviation: {np.std(scores):.1f}")
-        print(f"🎯 Final Epsilon: {self.data.get('epsilon', 'N/A')}")
+        print(f" Total Episodes: {len(scores)}")
+        print(f" Best Score: {max(scores):.1f}")
+        print(f" Worst Score: {min(scores):.1f}")
+        print(f" Average Score: {np.mean(scores):.1f}")
+        print(f" Median Score: {np.median(scores):.1f}")
+        print(f" Standard Deviation: {np.std(scores):.1f}")
+        print(f" Final Epsilon: {self.data.get('epsilon', 'N/A')}")
         
         # Performance in different phases
         if len(scores) >= 100:
             early_scores = scores[:100]
             late_scores = scores[-100:]
-            print(f"\n🚀 Early Training (first 100 episodes): {np.mean(early_scores):.1f}")
-            print(f"🎯 Late Training (last 100 episodes): {np.mean(late_scores):.1f}")
-            print(f"📈 Improvement: {np.mean(late_scores) - np.mean(early_scores):.1f}")
+            print(f"\n Early Training (first 100 episodes): {np.mean(early_scores):.1f}")
+            print(f" Late Training (last 100 episodes): {np.mean(late_scores):.1f}")
+            print(f" Improvement: {np.mean(late_scores) - np.mean(early_scores):.1f}")
         
         print("="*50)
 
@@ -268,7 +268,7 @@ class MarioDQNVisualizer:
         was_interactive = plt.isinteractive()
         plt.ioff()  # Disable interactive mode to avoid rendering overhead
 
-        print("🎨 Generating visualizations...")
+        print(" Generating visualizations...")
         self.print_training_summary()
 
         def _save_plot(plot_func, filename):
@@ -276,9 +276,9 @@ class MarioDQNVisualizer:
                 plot_func()
                 filepath = os.path.join(output_path, filename)
                 plt.savefig(filepath, dpi=300, bbox_inches='tight')
-                print(f"✅ Saved: {filepath}")
+                print(f"[DONE] Saved: {filepath}")
             except Exception as e:
-                print(f"❌ Error saving {filename}: {e}")
+                print(f" Error saving {filename}: {e}")
             finally:
                 plt.close()
 
@@ -290,14 +290,14 @@ class MarioDQNVisualizer:
         ]
 
         for func, fname in plots:
-            print(f"📊 Creating {fname.replace('_', ' ').replace('.png', '')}...")
+            print(f" Creating {fname.replace('_', ' ').replace('.png', '')}...")
             _save_plot(func, fname)
 
         if was_interactive:
             plt.ion()  # Restore interactivity if it was originally on
 
-        print(f"📁 All plots saved to {output_dir}/")
-        print("✅ All visualizations completed!")
+        print(f" All plots saved to {output_dir}/")
+        print(" All visualizations completed!")
 
 
     def create_all_visualizationsold(self, save_plots: bool = False, 
@@ -354,7 +354,7 @@ if __name__ == "__main__":
         # visualizer.plot_performance_metrics()
         
     except FileNotFoundError:
-        print(f"❌ Model file not found: {MODEL_PATH}")
+        print(f" Model file not found: {MODEL_PATH}")
         print("Please update MODEL_PATH with the correct path to your .pth file")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f" Error: {e}")

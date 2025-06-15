@@ -1,7 +1,8 @@
 gym==0.23.1
 nes-py==8.1.8
 gym-super-mario-bros==7.4.0
-torch
 opencv-python
+scikit-learn
 matplotlib
 seaborn
+torch

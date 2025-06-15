@@ -3,6 +3,7 @@ from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, COMPLEX_MOVEMENT, RIGH
 from nes_py.wrappers import JoypadSpace
 
 import os
+import sys
 import cv2
 import numpy as np
 from datetime import datetime
@@ -11,6 +12,12 @@ import matplotlib.pyplot as plt
 from agent import MarioAgent
 from env_wrappers import MarioPreprocessor
 from visual_utils import MarioRenderer, NESControllerOverlay
+
+# Προσθήκη του observation wrapper
+base_dir = os.path.dirname(__file__)
+temp     = os.path.abspath(os.path.join(base_dir, '..', '..'))
+sys.path.append(temp)
+from observation_wrapper import PartialObservationWrapper
 
 # Κλάση που διαχειρίζεται την εκπαίδευση και αξιολόγηση του Mario agent!
 class MarioTrainer:
@@ -177,17 +184,18 @@ class MarioTrainer:
         return shaped_reward
     
     def test(self,
-             model_path:       str = None,
-             episodes:         int = 1, # Κανονικά δεν χρειάζεται καθώς είναι ντετερμινιστικό κατά το testing-act...
-             render:           bool = True,
-             show_controller:  bool = False,
-             env_unresponsive: bool = False,
-             test_agent:       MarioAgent = None) -> bool:
+             model_path:          str = None,
+             episodes:            int = 1, # Κανονικά δεν χρειάζεται καθώς είναι ντετερμινιστικό κατά το testing-act...
+             render:              bool = True,
+             show_controller:     bool = False,
+             env_unresponsive:    bool = False,
+             observation_wrapper: PartialObservationWrapper = None) -> bool:
         '''
         Δοκιμή μοντέλου
         
         Parameters:
          - env_unresponsive_: True -> ελέγχει αν το περιβάλλον είναι "κολλημένο" - bugged.
+         - observation_wrapper_: Wrapper για partial/noisy observations.
         '''
         if model_path is not None:
             self.agent.load_model(model_path)
@@ -201,6 +209,8 @@ class MarioTrainer:
         
         if model_path is not None:
             print(f'Δοκιμή μοντέλου για {episodes} επεισόδιο...')
+            if observation_wrapper:
+                print(f'Using observation wrapper: {observation_wrapper.obs_type}')
 
         test_scores = []
         for episode in range(episodes):
@@ -250,8 +260,12 @@ class MarioTrainer:
                     action_history   = []
                     position_history = []
                 else:
-                    # Normal action selection from trained model
-                    action = self.agent.act(state, training = False)
+                    if observation_wrapper:
+                        observed_state = observation_wrapper.transform_observation(state)
+                        action         = self.agent.act(observed_state, training = False)
+                    else:
+                        # Normal action selection from trained model with full observation
+                        action = self.agent.act(state, training=False)
                 
                 # Track action and position history
                 action_history.append(action)

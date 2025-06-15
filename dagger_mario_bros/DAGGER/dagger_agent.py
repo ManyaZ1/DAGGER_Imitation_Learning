@@ -8,16 +8,17 @@ from collections import deque
 import torch.nn.functional as F
 from typing import Optional
 
-base_dir = os.path.dirname(__file__)
-temp = os.path.abspath(
+base_dir   = os.path.dirname(__file__)              
+pkg_parent = os.path.abspath(os.path.join(base_dir, '..', 'expert-SMB_DQN'))
+sys.path.insert(0, pkg_parent)   
+super_dqn_path  = os.path.abspath(
     os.path.join(base_dir, '..', 'expert-SMB_DQN', 'super_dqn')
-)
-sys.path.append(temp)
-from agent import MarioAgent # Import og agent
+) # …/expert-SMB_DQN/super_dqn
+sys.path.append(super_dqn_path) # add to PYTHONPATH
+from agent import MarioAgent    # Import og agent
 
 # Προσθήκη του observation wrapper
-base_dir = os.path.dirname(__file__)
-temp     = os.path.abspath(os.path.join(base_dir, '..'))
+temp = os.path.abspath(os.path.join(base_dir, '..'))
 sys.path.append(temp)
 from observation_wrapper import PartialObservationWrapper
 

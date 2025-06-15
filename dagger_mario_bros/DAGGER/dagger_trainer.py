@@ -10,11 +10,13 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-base_dir = os.path.dirname(__file__)
-temp = os.path.abspath(
+base_dir   = os.path.dirname(__file__)              
+pkg_parent = os.path.abspath(os.path.join(base_dir, '..', 'expert-SMB_DQN'))
+sys.path.insert(0, pkg_parent)   
+super_dqn_path  = os.path.abspath(
     os.path.join(base_dir, '..', 'expert-SMB_DQN', 'super_dqn')
-)
-sys.path.append(temp)
+) # …/expert-SMB_DQN/super_dqn
+sys.path.append(super_dqn_path) # add to PYTHONPATH
 from agent import MarioAgent
 from env_wrappers import MarioPreprocessor
 from visual_utils import MarioRenderer
@@ -27,8 +29,7 @@ from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 from nes_py.wrappers import JoypadSpace
 
 # Προσθήκη του observation wrapper
-base_dir = os.path.dirname(__file__)
-temp     = os.path.abspath(os.path.join(base_dir, '..'))
+temp = os.path.abspath(os.path.join(base_dir, '..'))
 sys.path.append(temp)
 from observation_wrapper import PartialObservationWrapper
 

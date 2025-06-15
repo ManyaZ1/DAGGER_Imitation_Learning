@@ -285,9 +285,9 @@ class MarioTrainer:
                 # Raw reward = base Mario environment reward (score, progress, completion)
                 # Shaped reward = raw reward + custom modifications:
                 #   - Progress bonus: +0.1 per pixel moved right
-                #   - Time penalty: -0.1 per step (encourages speed)
-                #   - Death penalty: -10 if Mario dies
-                #   - Flag bonus: +100 for completing level
+                #   - Time penalty:   -0.1 per step (encourages speed)
+                #   - Death penalty:  -10 if Mario dies
+                #   - Flag bonus:     +100 for completing level
                 shaped_reward = self.shape_reward(raw_reward, info, done)
                 
                 state         = next_state

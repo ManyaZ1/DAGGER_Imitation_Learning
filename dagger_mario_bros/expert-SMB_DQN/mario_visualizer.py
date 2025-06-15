@@ -72,7 +72,7 @@ class MarioDQNVisualizer:
         plt.grid(True, alpha=0.3)
         
         plt.tight_layout()
-        plt.show()
+        #plt.show()
     
     def plot_moving_average(self, window_sizes: List[int] = [50, 100, 200], 
                            figsize: Tuple[int, int] = (14, 8)) -> None:
@@ -111,7 +111,7 @@ class MarioDQNVisualizer:
         plt.legend(loc='upper left')
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
-        plt.show()
+        #plt.show()
     
     def plot_epsilon_decay(self, initial_epsilon: float = 1.0, 
                           decay_rate: float = 0.995, min_epsilon: float = 0.01,
@@ -165,7 +165,7 @@ class MarioDQNVisualizer:
         
         plt.legend()
         plt.tight_layout()
-        plt.show()
+        #plt.show()
     
     def plot_performance_metrics(self, figsize: Tuple[int, int] = (15, 10)) -> None:
         """Plot comprehensive performance metrics"""
@@ -226,7 +226,7 @@ class MarioDQNVisualizer:
         axes[1, 1].grid(True, alpha=0.3)
         
         plt.tight_layout()
-        plt.show()
+        #plt.show()
     
     def calculate_moving_average(self, data: List[float], window: int) -> List[float]:
         """Calculate moving average"""
@@ -259,8 +259,48 @@ class MarioDQNVisualizer:
             print(f"📈 Improvement: {np.mean(late_scores) - np.mean(early_scores):.1f}")
         
         print("="*50)
-    
-    def create_all_visualizations(self, save_plots: bool = False, 
+
+    def create_all_visualizations(self, output_dir: str = "mario_plots") -> None:
+        """Create and save all visualizations to disk (no display)."""
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, output_dir)
+        os.makedirs(output_path, exist_ok=True)
+        was_interactive = plt.isinteractive()
+        plt.ioff()  # Disable interactive mode to avoid rendering overhead
+
+        print("🎨 Generating visualizations...")
+        self.print_training_summary()
+
+        def _save_plot(plot_func, filename):
+            try:
+                plot_func()
+                filepath = os.path.join(output_path, filename)
+                plt.savefig(filepath, dpi=300, bbox_inches='tight')
+                print(f"✅ Saved: {filepath}")
+            except Exception as e:
+                print(f"❌ Error saving {filename}: {e}")
+            finally:
+                plt.close()
+
+        plots = [
+            (self.plot_episode_scores, "episode_scores.png"),
+            (self.plot_moving_average, "moving_averages.png"),
+            (self.plot_epsilon_decay, "epsilon_decay.png"),
+            (self.plot_performance_metrics, "performance_metrics.png"),
+        ]
+
+        for func, fname in plots:
+            print(f"📊 Creating {fname.replace('_', ' ').replace('.png', '')}...")
+            _save_plot(func, fname)
+
+        if was_interactive:
+            plt.ion()  # Restore interactivity if it was originally on
+
+        print(f"📁 All plots saved to {output_dir}/")
+        print("✅ All visualizations completed!")
+
+
+    def create_all_visualizationsold(self, save_plots: bool = False, 
                                 output_dir: str = "mario_plots") -> None:
         """Create all visualizations at once"""
         if save_plots:
@@ -305,7 +345,7 @@ if __name__ == "__main__":
         visualizer = MarioDQNVisualizer(MODEL_PATH)
         
         # Generate all visualizations
-        visualizer.create_all_visualizations(save_plots=True)
+        visualizer.create_all_visualizations()
         
         # Or create individual plots:
         # visualizer.plot_episode_scores()

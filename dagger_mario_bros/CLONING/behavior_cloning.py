@@ -71,9 +71,14 @@ class ExpertDemonstrationCollector:
         
         # Αποθήκευση αν ζητήθηκε
         if save_path:
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
             with open(save_path, 'wb') as f:
                 pickle.dump(demonstrations, f)
             print(f"Demonstrations αποθηκεύτηκαν στο {save_path}")
+        # if save_path:
+        #     with open(save_path, 'wb') as f:
+        #         pickle.dump(demonstrations, f)
+        #     print(f"Demonstrations αποθηκεύτηκαν στο {save_path}")
         
         return demonstrations
 
@@ -322,6 +327,7 @@ class BehaviorCloningAgent:
     
     def load_model(self, filepath: str) -> None:
         """Φόρτωση εκπαιδευμένου μοντέλου"""
+        print("[DEBUG] BEHAVIOR_CLONING.PY 325 calling load_model")
         checkpoint = torch.load(filepath, map_location=self.device)
         
         self.network.load_state_dict(checkpoint['network_state_dict'])

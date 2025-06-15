@@ -13,12 +13,13 @@ from super_dqn.visual_utils import MarioRenderer
 
 # All saved agents (add/remove as needed)
 agent_choices = {
-    "1": ("full_state",        "bc_agent_full_state.pth",         None),
-    "2": ("partial_obs",       "bc_agent_partial_obs_2_4_channels.pth", PartialObservationWrapper("partial")),
-    "3": ("noisy_obs_σ=0.1",   "bc_agent_noisy_obs_σ=0.1.pth",    PartialObservationWrapper("noisy", noise_level=0.1)),
-    "4": ("noisy_obs_σ=0.2",   "bc_agent_noisy_obs_σ=0.2.pth",    PartialObservationWrapper("noisy", noise_level=0.2)),
-    "5": ("downsampled",       "bc_agent_downsampled.pth",        PartialObservationWrapper("downsampled")),
+    "1": ("full_state",        os.path.join(base_dir, "models", "bc_agent_full_state.pth"),         None),
+    "2": ("partial_obs",       os.path.join(base_dir, "models","bc_agent_partial_obs_2_4_channels.pth"), PartialObservationWrapper("partial")),
+    "3": ("noisy_obs_sigma=0.1",   os.path.join(base_dir, "models","bc_agent_noisy_obs_sigma=0.1.pth"),    PartialObservationWrapper("noisy", noise_level=0.1)),
+    "4": ("noisy_obs_sigma=0.2",   os.path.join(base_dir, "models","bc_agent_noisy_obs_sigma=0.2.pth"),    PartialObservationWrapper("noisy", noise_level=0.2)),
+    "5": ("downsampled",       os.path.join(base_dir, "models","bc_agent_downsampled.pth"),        PartialObservationWrapper("downsampled")),
 }
+
 
 def main():
     print("🎮 Επιλέξτε έναν BC Agent για δοκιμή:")
@@ -73,8 +74,15 @@ def main():
         state, reward, done, info = env.step(action)
         total_reward += reward
         steps += 1
+    result_text=f"\n✅ Ολοκληρώθηκε! Score: {total_reward:.1f}, X: {info.get('x_pos', 0)}, Flag: {info.get('flag_get', False)}"
+    print(result_text)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_path = os.path.join(script_dir, 'test_results')
+    os.makedirs(output_path, exist_ok=True)
+    log_file = os.path.join(output_path, f'evaluation_log_{name}.txt')
+    with open(log_file, 'a') as f:
+        f.write(result_text + '\n')
 
-    print(f"\n✅ Ολοκληρώθηκε! Score: {total_reward:.1f}, X: {info.get('x_pos', 0)}, Flag: {info.get('flag_get', False)}")
 
 if __name__ == "__main__":
     main()

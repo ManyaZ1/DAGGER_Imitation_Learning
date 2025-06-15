@@ -1,6 +1,6 @@
 # DAGGER_Imitation_Learning
 ## Intelligent Control (ECE_ΔK807) – Team Projects
-### 4. Imitation Learning with DAGGER or Privileged Information
+### 4. Imitation Learning with DAGGER or Privileged Information 🕹️
 
 ### 🧠 Topics
 - Imitation Learning

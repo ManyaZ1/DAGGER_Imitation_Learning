@@ -9,9 +9,9 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-from .agent import MarioAgent
-from .env_wrappers import MarioPreprocessor
-from .visual_utils import MarioRenderer, NESControllerOverlay
+from super_dqn.agent import MarioAgent
+from super_dqn.env_wrappers import MarioPreprocessor
+from super_dqn.visual_utils import MarioRenderer, NESControllerOverlay
 
 # Προσθήκη του observation wrapper
 base_dir = os.path.dirname(__file__)

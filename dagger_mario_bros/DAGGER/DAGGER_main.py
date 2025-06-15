@@ -1,12 +1,19 @@
 import os
 import sys
 
-# Γιατί μας τα ζάλιζε ένα gym...
+base_dir        = os.path.dirname(__file__)              
+pkg_parent = os.path.abspath(os.path.join(base_dir, '..', 'expert-SMB_DQN'))
+sys.path.insert(0, pkg_parent)   
+super_dqn_path  = os.path.abspath(os.path.join(base_dir, '..',
+                                               'expert-SMB_DQN',
+                                               'super_dqn'))              # …/expert-SMB_DQN/super_dqn
+sys.path.append(super_dqn_path)                                           # add to PYTHONPATH
+# 
 import warnings
 warnings.filterwarnings('ignore', category = UserWarning, module = 'gym')
 
 # Setup paths
-base_dir = os.path.dirname(os.path.abspath(__file__))
+#base_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(base_dir, '..', 'expert-SMB_DQN', 'super_dqn'))
 
 # Imports

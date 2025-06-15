@@ -8,13 +8,13 @@
 while the policy has only partial or noisy observations (e.g., images or low-dimensional features). Implement DAGGER to iteratively improve the learner. Compare to behavior cloning
 and analyze generalization under noise.
 
-# --- Create a new conda environment ---
+--- Create a new conda environment ---
 conda create -n mario python=3.8 -y
 
-# --- Activate the environment ---
+--- Activate the environment ---
 conda activate mario
 
-# --- Install required Python packages via pip ---
+--- Install required Python packages via pip ---
 Microsoft Visual C++ 14.0 or greater is required.
 https://visualstudio.microsoft.com/visual-cpp-build-tools/
 

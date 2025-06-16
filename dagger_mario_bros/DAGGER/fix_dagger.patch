@@ -1,0 +1,42 @@
+diff --git a/dagger_trainer.py b/dagger_trainer.py
+--- a/dagger_trainer.py
++++ b/dagger_trainer.py
+@@ def _behaviour_cloning_warmup(self,
+-        state_full = self.env.reset()
++        state_full = self.env.reset()
+@@ def _behaviour_cloning_warmup(self,
+-            state_full, _, done, _ = self.env.step(action)
++            state_full, _, done, _ = self.env.step(action)
+@@ def _setup_agents(self):
+         if self.config.observation_type == 'partial':
+             self.state_shape = list(self.state_shape)
+             self.state_shape[0] = 2
+             self.state_shape = tuple(self.state_shape)
+             print(f'- State shape for learner: {self.state_shape} - PARTIAL')
+-        self.learner = DaggerMarioAgent(self.state_shape, self.n_actions)
++        self.learner = DaggerMarioAgent(self.state_shape, self.n_actions)
+@@ def test(self,
+-        state_full, _ = self.env.reset()
++        state_full    = self.env.reset()
+@@ def test(self,
+-                action = self.agent.act(state_part, training=False)
++                action = self.learner.act(state_part, training=False)
+-                state_full, reward, done, _, _ = self.env.step(action)
++                state_full, reward, done, info = self.env.step(action)
+@@ def _run_episode(self, iteration: int, episode: int) -> Dict:
+-            observed_state = self.observation_wrapper.transform_observation(state) \
+-                             if self.observation_wrapper else state
++            observed_state = self.observation_wrapper.transform_observation(state) \
++                             if self.observation_wrapper else state
+@@ def _run_episode(self, iteration: int, episode: int) -> Dict:
+-            next_state, reward, done, info = self.env.step(learner_action)
++            next_state, reward, done, info = self.env.step(learner_action)
+@@ def _run_episode(self, iteration: int, episode: int) -> Dict:
+-            self.learner.remember(observed_state, expert_action)
++            self.learner.remember(observed_state, expert_action)
+@@ def _train_learner(self, iteration: int) -> float:
+-            loss = self.learner.replay(wrapper=self.observation_wrapper)
++            loss = self.learner.replay(wrapper=None)
+@@ def _train_learner_immediate(self, num_batches: int = 3) -> float:
+-            loss = self.learner.replay(wrapper=self.observation_wrapper)
++            loss = self.learner.replay(wrapper=None)

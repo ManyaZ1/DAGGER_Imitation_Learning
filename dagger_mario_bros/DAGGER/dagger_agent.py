@@ -47,20 +47,21 @@ class DaggerMarioAgent(MarioAgent):
         
         return
         
-    def remember(self, state: np.ndarray, expert_action: int, *args) -> None:
+    def remember(self, state: np.ndarray, expert_action: int, **kwargs) -> None:
         '''
         Αποθήκευση ζευγών (state, expert_action) για εκπαίδευση DAGGER
         
         Args:
             state:         Current state
             expert_action: Action του expert για το συγκεκριμένο state
-            *args:         Παράμετροι που αγνοούνται, αφού DAGGER!
+
+        **kwargs: Unused παράμετροι που μπορεί να υπάρχουν σε άλλη 'γενιά' agent!!!
         '''
         self.dagger_memory.append((state, expert_action))
 
         return
         
-    def replay(self, wrapper: Optional[PartialObservationWrapper] = None) -> Optional[float]:
+    def replay(self) -> Optional[float]:
         '''
         Εκπαίδευση DAGGER - Supervised learning με expert demonstrations
 
@@ -75,10 +76,6 @@ class DaggerMarioAgent(MarioAgent):
 
         states         = [transition[0] for transition in batch]
         expert_actions = [transition[1] for transition in batch]
-
-        # Εφαρμογή observation wrapper αν υπάρχει
-        if wrapper:
-            states = [wrapper.transform_observation(s) for s in states]
 
         # Μετατροπή σε tensors
         states_tensor = torch.FloatTensor(np.array(states)).to(self.device)
@@ -101,28 +98,17 @@ class DaggerMarioAgent(MarioAgent):
 
         return loss.item()
     
-    def act(self, state: np.ndarray, training: bool = True) -> int:
+    def act(self, state: np.ndarray, **kwargs) -> int:
         '''
-        Επιλογή action με βάση το τρέχον policy ή το greedy policy
-        
-        Κατά το training:   Χρήση του current policy
-        Κατά το evaluation: Χρήση του greedy policy
+        Επιλογή action με βάση το τρέχον/greedy policy του DAGGER agent!
+
+        **kwargs: Unused παράμετροι που μπορεί να υπάρχουν σε άλλη 'γενιά' agent!!!
         '''
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         
         with torch.no_grad():
             action_logits = self.q_network(state_tensor)
-            
-            if training: # Θέλουμε exploration!
-                # Epsilon-greedy (recommended for DAGGER)
-                if random.random() < self.epsilon:
-                    # Random exploration
-                    action = random.randint(0, action_logits.size(1) - 1)
-                else:
-                    # Greedy action based on current policy
-                    action = action_logits.argmax().item()
-            else: # Greedy policy
-                action = action_logits.argmax().item()
+            action = action_logits.argmax().item()
         
         return action
     

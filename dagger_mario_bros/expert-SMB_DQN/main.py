@@ -36,10 +36,15 @@ def main():
     elif user_input == 'test':
         try:
             model_path = find_latest_model()
-            # 1/0 # Sorry, but the mario_model_best, is truly
+            1/0 # Sorry, but the mario_model_best, is truly
                 # the best model (at least for now...)!!!!!
         except:
-            model_path = os.path.join(parrent_dir, 'models', 'mario_model_best.pth')
+            model_path = os.path.join(
+                parrent_dir, 'models',
+                # 'mario_model_best.pth'
+                # 'mario_model_ep15000_20250601_235321.pth'
+                'mario_model_ep5000_20250601_003758.pth'
+            )
     elif user_input == '1st_expert':
         model_path = os.path.join(parrent_dir, 'models', 'WORKING_MARIO_AGENT.pth')
     elif user_input == '2nd_expert':
@@ -47,13 +52,13 @@ def main():
     elif user_input == 'dagger':
         model_path = os.path.join(
             parrent_dir, '..', 'DAGGER', 'SUCCESS',
-            'mario_FLAG_iter574_ep19_3425_20250609_072905-success.pth'
+            'mario_FLAG_iter574_ep19_3425_20250609_072905.pth'
         )
 
     try:
         trainer.test(
             model_path, episodes = 1, render = True, show_controller = True,
-            env_unresponsive = True
+            # env_unresponsive = True
         )
     except:
         pass

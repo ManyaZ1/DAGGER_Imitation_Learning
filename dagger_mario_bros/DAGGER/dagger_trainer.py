@@ -198,7 +198,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
             observed_state = self.observation_wrapper.transform_observation(state) \
                              if self.observation_wrapper else state
             # Learner acts on the partial/noisy observation
-            learner_action = self.learner.act(observed_state, training = False)
+            learner_action = self.learner.act(observed_state)
             # Expert acts on the full observation
             expert_action = self.expert.act(state, training = False)
             
@@ -268,7 +268,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         for batch in range(num_batches):
             loss = self.learner.replay()
             if loss is not None:
-                total_loss += loss
+                total_loss  += loss
                 batch_count += 1
         
         avg_loss = total_loss / max(batch_count, 1)

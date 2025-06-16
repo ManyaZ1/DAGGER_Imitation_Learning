@@ -97,28 +97,15 @@ class DaggerMarioAgent(MarioAgent):
 
         return loss.item()
     
-    def act(self, state: np.ndarray, training: bool = True) -> int:
+    def act(self, state: np.ndarray) -> int:
         '''
-        Επιλογή action με βάση το τρέχον policy ή το greedy policy
-        
-        Κατά το training:   Χρήση του current policy
-        Κατά το evaluation: Χρήση του greedy policy
+        Επιλογή action με βάση το τρέχον/greedy policy του DAGGER agent!
         '''
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         
         with torch.no_grad():
             action_logits = self.q_network(state_tensor)
-            
-            if training: # Θέλουμε exploration!
-                # Epsilon-greedy (recommended for DAGGER)
-                if random.random() < self.epsilon:
-                    # Random exploration
-                    action = random.randint(0, action_logits.size(1) - 1)
-                else:
-                    # Greedy action based on current policy
-                    action = action_logits.argmax().item()
-            else: # Greedy policy
-                action = action_logits.argmax().item()
+            action = action_logits.argmax().item()
         
         return action
     

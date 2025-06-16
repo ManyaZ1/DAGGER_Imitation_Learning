@@ -396,7 +396,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         
         # Save model
         model_path = os.path.join(
-            self.save_dir, f'dagger_mario_iter{iteration+1}_{timestamp}.pth'
+            self.save_dir, f'dagger_mario_BCwDAGGER_iter{iteration+1}_{timestamp}.pth'
         )
         self.learner.save_model(str(model_path))
         
@@ -463,7 +463,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
                     temp = self.config.observation_type if self.config.observation_type is not None else 'normal'
                     flag_model_path = os.path.join(
                         self.save_dir,
-                        f'mario_FLAG_iter{iteration+1}_ep{episode+1}_{int(reward_temp)}_{timestamp}_{temp}.pth'
+                        f'mario_FLAG_BCwDAGGER_iter{iteration+1}_ep{episode+1}_{int(reward_temp)}_{timestamp}_{temp}.pth'
                     )
                     self.learner.save_model(flag_model_path)
                     print(f'-> FLAG MODEL SAVED IMMEDIATELY: {flag_model_path}')

@@ -19,15 +19,15 @@ def main():
         render                    = True,
         only_for_testing          = True
     )
-    trainer = DaggerTrainer(config)
+    trainerd = DaggerTrainer(config)
 
     model_path = os.path.join( 
         base_dir, 'SUCCESS',
         # 'dagger_mario_iter27_20250609_131303.pth'
-        'mario_FLAG_iter574_ep19_3425_20250609_072905.pth'
+        'mario_FLAG_iter4_ep2_3437_BC_warmup20250616_225237_partial.pth'
     )
 
-    trainer.test(
+    trainerd.test(
         model_path, episodes = 1, render = True, show_controller = True,
         env_unresponsive = True
     )

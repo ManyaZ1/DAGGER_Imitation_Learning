@@ -2,24 +2,24 @@ import os
 import sys
 
 base_dir   = os.path.dirname(__file__)              
-pkg_parent = os.path.abspath(os.path.join(base_dir, '..', 'expert-SMB_DQN'))
-sys.path.insert(0, pkg_parent)   
-super_dqn_path  = os.path.abspath(
-    os.path.join(base_dir, '..', 'expert-SMB_DQN', 'super_dqn')
-) # …/expert-SMB_DQN/super_dqn
-sys.path.append(super_dqn_path) # add to PYTHONPATH
 
 import warnings
 warnings.filterwarnings('ignore', category = UserWarning, module = 'gym')
 
-# Setup paths
-sys.path.append(os.path.join(base_dir, '..', 'expert-SMB_DQN', 'super_dqn'))
-
 # Imports
-from trainer import MarioTrainer
+from dagger_trainer import DaggerTrainer, DaggerConfig
 
 def main():
-    trainer = MarioTrainer(world = '1', stage = '1', action_type = 'simple')
+    config = DaggerConfig(
+        observation_type          = 'partial',
+        iterations                = 1,
+        episodes_per_iter         = 1,
+        training_batches_per_iter = 1,
+        expert_model_path         = ' ',
+        render                    = True,
+        only_for_testing          = True
+    )
+    trainer = DaggerTrainer(config)
 
     model_path = os.path.join( 
         base_dir, 'SUCCESS',

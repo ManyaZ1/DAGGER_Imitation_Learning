@@ -102,7 +102,8 @@ def create_noisy_frame_from_obs(obs_wrapper, clean_frame):
 def main():
     model_path = os.path.join(
         base_dir, 'SUCCESS',
-        'mario_FLAG_iter300_ep1_3437_20250616_194752_noisy.pth'
+        # 'mario_FLAG_iter300_ep1_3437_20250616_194752_noisy.pth'
+        'mario_FLAG_iter427_ep2_3434_20250616_233100_noisy.pth'
     )
 
     # DAGGER config (minimal so we can use the test method!!!)

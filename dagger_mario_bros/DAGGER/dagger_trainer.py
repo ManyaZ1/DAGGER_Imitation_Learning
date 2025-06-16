@@ -71,13 +71,33 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         
         if self.config.only_for_testing:
             print('\n-> DAGGER Trainer initialized in testing mode. No training will be performed.\n')
+            self._handle_observation_type_settings()
+            
             self.learner = DaggerMarioAgent(self.state_shape, self.n_actions)
             self.agent   = self.learner
+            self.actions = SIMPLE_MOVEMENT
+            
             return
 
         self._setup_agents()
         self._setup_directories()
         self._setup_metrics()
+
+        return
+    
+    def _handle_observation_type_settings(self):
+        if self.config.observation_type == 'partial':
+            self.state_shape    = list(self.state_shape)
+            self.state_shape[0] = 2
+            self.state_shape    = tuple(self.state_shape)
+            print(f'-> State shape for learner: {self.state_shape} - PARTIAL\n')
+
+        self.observation_wrapper = None
+        if self.config.observation_type:
+            self.observation_wrapper = PartialObservationWrapper(
+                obs_type    = self.config.observation_type,
+                noise_level = self.config.noise_level
+            )
 
         return
         
@@ -110,21 +130,12 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         # Φόρτωση του expert μοντέλου
         self.expert.load_model(self.config.expert_model_path)
 
+        # Διαχείριση observation type settings - Μέθοδος ώστε να
+        # υπάρχει και όταν γίνεται χρήση μόνο για testing!
+        self._handle_observation_type_settings()
+
         print('\nLearner/DAGGER:')
-        if self.config.observation_type == 'partial':
-            self.state_shape = list(self.state_shape)
-            self.state_shape[0] = 2
-            self.state_shape = tuple(self.state_shape)
-            print(f'- State shape for learner: {self.state_shape} - PARTIAL')
         self.learner = DaggerMarioAgent(self.state_shape, self.n_actions)
-        
-        # Optional observation wrapper
-        self.observation_wrapper = None
-        if self.config.observation_type:
-            self.observation_wrapper = PartialObservationWrapper(
-                obs_type    = self.config.observation_type,
-                noise_level = self.config.noise_level
-            )
 
         # Οπτικοποίηση αν ζητηθεί
         if self.config.render:

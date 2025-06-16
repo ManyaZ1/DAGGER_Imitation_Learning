@@ -1,9 +1,8 @@
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 import seaborn as sns
-from scipy import stats
 import os
 
 # Set style for better looking plots

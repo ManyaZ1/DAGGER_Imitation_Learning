@@ -188,6 +188,7 @@ class MarioTrainer:
              episodes:            int = 1, # Κανονικά δεν χρειάζεται καθώς είναι ντετερμινιστικό κατά το testing-act...
              render:              bool = True,
              show_controller:     bool = False,
+             test_agent:          MarioAgent = None,
              env_unresponsive:    bool = False,
              observation_wrapper: PartialObservationWrapper = None) -> bool:
         '''
@@ -265,7 +266,7 @@ class MarioTrainer:
                         action         = self.agent.act(observed_state, training = False)
                     else:
                         # Normal action selection from trained model with full observation
-                        action = self.agent.act(state, training=False)
+                        action = self.agent.act(state, training = False)
                 
                 # Track action and position history
                 action_history.append(action)

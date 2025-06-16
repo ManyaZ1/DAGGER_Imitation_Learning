@@ -72,6 +72,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         if self.config.only_for_testing:
             print('\n-> DAGGER Trainer initialized in testing mode. No training will be performed.\n')
             self.learner = DaggerMarioAgent(self.state_shape, self.n_actions)
+            self.agent   = DaggerMarioAgent(self.state_shape, self.n_actions)
             return
 
         self._setup_agents()

@@ -2,6 +2,10 @@ import gym_super_mario_bros
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, COMPLEX_MOVEMENT, RIGHT_ONLY
 from nes_py.wrappers import JoypadSpace
 
+# Για το environment access violation reading 0x000000000003C200!
+import time
+import gc
+
 import os
 import sys
 import cv2
@@ -29,6 +33,22 @@ class MarioTrainer:
                  action_type: str = 'simple',
                  max_steps:   int = 800,
                  printless:   bool = False) -> None:
+        self.world       = world
+        self.stage       = stage
+        self.action_type = action_type
+        self.printless   = printless
+
+        self.best_avg_score    = float('-inf') # Track best average score
+        self.max_episode_steps = max_steps # Μέγιστο πλήθος βημάτων ανά επεισόδιο
+        self.setup_environment(world, stage, action_type, printless)
+
+        return
+    
+    def setup_environment(self,
+                          world:       str='1',
+                          stage:       str='1',
+                          action_type: str='simple',
+                          printless:   bool=False):
         # Δημιουργία περιβάλλοντος Gym για συγκεκριμένο επίπεδο
         env_name = f'SuperMarioBros-{world}-{stage}-v0'
         self.env = gym_super_mario_bros.make(env_name)
@@ -64,9 +84,6 @@ class MarioTrainer:
             print(f'Number of actions: {n_actions}')
             print(f'Actions:           {actions}')
 
-        self.best_avg_score    = float('-inf') # Track best average score
-        self.max_episode_steps = max_steps # Μέγιστο πλήθος βημάτων ανά επεισόδιο
-
         return
     
     def train(self,
@@ -82,7 +99,27 @@ class MarioTrainer:
         
         for episode in range(episodes):
             # Επαναφορά περιβάλλοντος και αρχικής κατάστασης
-            state = self.env.reset()
+            # Δεν έχει τεσταριστεί για τον expert agent, αλλά στο DAGGER trainer δουλεύει!!!
+            for attempt in range(3):
+                try:
+                    state = self.env.reset()
+                    break
+                except OSError:
+                    try:
+                        self.env.close()
+                    except Exception:
+                        pass
+                    gc.collect()
+                    time.sleep(1)
+                    self.setup_environment(
+                        world       = self.world,
+                        stage       = self.stage,
+                        action_type = self.action_type,
+                        printless   = True
+                    ) # Recreate the env from scratch!!!
+            else:
+                raise RuntimeError(f"[Episode {episode + 1:03}] env.reset() failed 3 times. Aborting.")
+
             self.prev_x_pos = 40 # Βάση δοκιμών, ο Mario ξεκινάει από x = 40!
             
             total_reward = 0
@@ -213,6 +250,7 @@ class MarioTrainer:
             if observation_wrapper:
                 print(f'Using observation wrapper: {observation_wrapper.obs_type}')
 
+        temp = False
         test_scores = []
         for episode in range(episodes):
             state = self.env.reset()
@@ -304,6 +342,9 @@ class MarioTrainer:
                 print(f"Final Position: {info.get('x_pos', 0)}, Lives: {info.get('life', 3)}")
                 if stuck_counter > 0:
                     print(f'Environment unresponsive {stuck_counter} times...')
+            
+            if info.get('flag_get', False):
+                temp = True
         
         avg_test_score = np.mean(test_scores)
         if model_path is not None:
@@ -311,10 +352,6 @@ class MarioTrainer:
         
         cv2.destroyAllWindows()
         self.env.close()
-
-        temp = False
-        if info.get('flag_get', False):
-            temp = True
 
         return temp
     

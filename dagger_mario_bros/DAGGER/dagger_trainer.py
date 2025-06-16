@@ -10,6 +10,10 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# Για το environment access violation reading 0x000000000003C200!
+import time
+import gc
+
 base_dir   = os.path.dirname(__file__)              
 pkg_parent = os.path.abspath(os.path.join(base_dir, '..', 'expert-SMB_DQN'))
 sys.path.insert(0, pkg_parent)   
@@ -27,6 +31,7 @@ from dagger_agent import DaggerMarioAgent
 import gym_super_mario_bros
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 from nes_py.wrappers import JoypadSpace
+from gym.wrappers import TimeLimit
 
 # Προσθήκη του observation wrapper
 temp = os.path.abspath(os.path.join(base_dir, '..'))
@@ -55,7 +60,7 @@ class DaggerConfig:
     save_frequency:            int = 1
     max_episode_steps:         int = 1000
 
-class DaggerTrainer:
+class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για το test method!!!
     ''' DAGGER [Dataset Aggregation] trainer για τον Mario AI agent. '''
     
     def __init__(self, config: DaggerConfig):
@@ -67,21 +72,24 @@ class DaggerTrainer:
 
         return
         
-    def _setup_environment(self):
+    def _setup_environment(self, printless: bool = False):
         env_name = f'SuperMarioBros-{self.config.world}-{self.config.stage}-v0'
-        print(f'Αρχικοποίηση περιβάλλοντος: {env_name}')
         
         raw_env     = gym_super_mario_bros.make(env_name)
         wrapped_env = JoypadSpace(raw_env, SIMPLE_MOVEMENT)
         self.env    = MarioPreprocessor(wrapped_env)
         
         # Ορισμός max αριθμού βημάτων ανά επεισόδιο
-        self.env._max_episode_steps = self.config.max_episode_steps
+        self.env = TimeLimit( # TimeLimit για memory safety!!!
+            MarioPreprocessor(wrapped_env), max_episode_steps=self.config.max_episode_steps
+        )
         
         self.state_shape = self.env.observation_space.shape
         self.n_actions   = self.env.action_space.n
         
-        print(f'State shape: {self.state_shape} - Actions: {self.n_actions}')
+        if not printless:
+            print(f'Αρχικοποίηση περιβάλλοντος: {env_name}')
+            print(f'State shape: {self.state_shape} - Actions: {self.n_actions}')
 
         return
     
@@ -89,7 +97,7 @@ class DaggerTrainer:
         ''' Αρχικοποίηση του expert και learner agent '''
         # Οι agent μας
         print('\nExpert:')
-        self.expert  = MarioAgent(self.state_shape, self.n_actions)
+        self.expert = MarioAgent(self.state_shape, self.n_actions)
         # Φόρτωση του expert μοντέλου
         self.expert.load_model(self.config.expert_model_path)
 
@@ -152,36 +160,25 @@ class DaggerTrainer:
         
         return agreements / len(learner_actions)
     
-    def _shape_reward(self, reward: float, info: dict, done: bool) -> float:
-        '''
-        Custom reward διαμόρφωση για καλύτερη
-        εκπαίδευση - copy/paste από trainer.py
-        '''
-        shaped_reward = reward
-        
-        # Θέλουμε να πάει προς τα δεξιά!
-        x_pos = info.get('x_pos')
-        if x_pos is not None:
-            progress        = max(0, x_pos - self.prev_x_pos)
-            shaped_reward  += progress * 0.1
-            self.prev_x_pos = x_pos
-
-        # Time-based penalty
-        shaped_reward -= 0.1
-        
-        # Penalize death
-        if done and info.get('life', 3) < 3:
-            shaped_reward -= 10
-        
-        # Bonus για την ολοκλήρωση της πίστας
-        if info.get('flag_get', False):
-            shaped_reward += 100
-        
-        return shaped_reward
-    
     def _run_episode(self, iteration: int, episode: int) -> Dict:
         ''' Τρέχει 1 επεισόδιο και συλλέγει δεδομένα '''
-        state = self.env.reset()
+
+        # Fix για το access violation reading 0x000000000003C200...
+        for attempt in range(3):
+            try:
+                state = self.env.reset()
+                break
+            except OSError:
+                try:
+                    self.env.close()
+                except Exception:
+                    pass
+                gc.collect()
+                time.sleep(1)
+                self._setup_environment(printless = True) # Recreate the env from scratch!!!
+        else:
+            raise RuntimeError(f"[Episode {episode + 1:03}] env.reset() failed 3 times. Aborting.")
+
         self.prev_x_pos = 40 # Αρχική θέση Mario
 
         done            = False
@@ -213,7 +210,7 @@ class DaggerTrainer:
             
             # Εκτέλεση της ενέργειας του learner στο περιβάλλον
             next_state, reward, done, info = self.env.step(learner_action)
-            reward = self._shape_reward(reward, info, done)
+            reward = self.shape_reward(reward, info, done)
             
             # Θυμήσου την αλληλεπίδραση expert-περιβάλλοντος, δηλαδή:
             # Expert provides correct labels for those states
@@ -302,7 +299,6 @@ class DaggerTrainer:
         '''Βασική συνάρτηση/loop εκπαίδευσης DAGGER.'''
         print('-> Ενάρξη εκπαίδευσης DAGGER για Mario AI agent...')
 
-        trainer = MarioTrainer(printless = True) # Το gym δεν είναι έμπιστο!!!
         best_model_path = None
         for iteration in range(self.config.iterations):
             print(f'\nIteration: {iteration+1}/{self.config.iterations}')
@@ -330,13 +326,11 @@ class DaggerTrainer:
                     if self.config.observation_type == 'noisy':
                         tries_num = 3 # 3 tries if noise exists
                         temp      = self.observation_wrapper
-                    for _ in range(tries_num):
-                        if trainer.test(
-                            test_agent = self.learner, render = True,
-                            env_unresponsive = True, observation_wrapper = temp
-                        ):
-                            success = True
-                            break
+                    
+                    success = self.test(
+                        test_agent = self.learner, render = True, episodes = tries_num,
+                        env_unresponsive = True, observation_wrapper = temp
+                    )
                     if not success:
                         continue
 

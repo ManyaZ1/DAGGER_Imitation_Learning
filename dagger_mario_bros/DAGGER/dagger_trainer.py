@@ -59,13 +59,21 @@ class DaggerConfig:
     render:                    bool = False
     save_frequency:            int = 1
     max_episode_steps:         int = 1000
+    only_for_testing:          bool = False # Όταν θέλουμε κυρίως να κάνουμε απλά testing!
 
 class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για το test method!!!
     ''' DAGGER [Dataset Aggregation] trainer για τον Mario AI agent. '''
     
     def __init__(self, config: DaggerConfig):
         self.config = config
+
         self._setup_environment()
+        
+        if self.config.only_for_testing:
+            print('\n-> DAGGER Trainer initialized in testing mode. No training will be performed.\n')
+            self.learner = DaggerMarioAgent(self.state_shape, self.n_actions)
+            return
+
         self._setup_agents()
         self._setup_directories()
         self._setup_metrics()
@@ -321,9 +329,9 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
                 # IMMEDIATE FLAG SAVE - Right after episode completion
                 if episode_info['flag_get']:    
                     success = self.test(
-                        test_agent = self.learner, render = True, episodes = 3,
+                        test_agent = self.learner, render = False, episodes = 3,
                         observation_wrapper = self.observation_wrapper,
-                        env_unresponsive = True
+                        env_unresponsive = False
                     )
                     if not success:
                         continue
@@ -553,7 +561,7 @@ def main():
         iterations                = 500,
         episodes_per_iter         = 3,
         training_batches_per_iter = 300,
-        expert_model_path= os.path.join(
+        expert_model_path         = os.path.join(
             base_dir, '..',
             'expert-SMB_DQN', 'models', 'ep30000_MARIO_EXPERT.pth'
         ),

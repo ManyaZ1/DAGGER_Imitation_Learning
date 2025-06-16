@@ -47,14 +47,15 @@ class DaggerMarioAgent(MarioAgent):
         
         return
         
-    def remember(self, state: np.ndarray, expert_action: int) -> None:
+    def remember(self, state: np.ndarray, expert_action: int, **kwargs) -> None:
         '''
         Αποθήκευση ζευγών (state, expert_action) για εκπαίδευση DAGGER
         
         Args:
             state:         Current state
             expert_action: Action του expert για το συγκεκριμένο state
-            *args:         Παράμετροι που αγνοούνται, αφού DAGGER!
+
+        **kwargs: Unused παράμετροι που μπορεί να υπάρχουν σε άλλη 'γενιά' agent!!!
         '''
         self.dagger_memory.append((state, expert_action))
 
@@ -97,9 +98,11 @@ class DaggerMarioAgent(MarioAgent):
 
         return loss.item()
     
-    def act(self, state: np.ndarray) -> int:
+    def act(self, state: np.ndarray, **kwargs) -> int:
         '''
         Επιλογή action με βάση το τρέχον/greedy policy του DAGGER agent!
+
+        **kwargs: Unused παράμετροι που μπορεί να υπάρχουν σε άλλη 'γενιά' agent!!!
         '''
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         

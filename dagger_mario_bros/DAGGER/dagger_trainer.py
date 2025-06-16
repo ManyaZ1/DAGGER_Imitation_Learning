@@ -198,9 +198,9 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
             observed_state = self.observation_wrapper.transform_observation(state) \
                              if self.observation_wrapper else state
             # Learner acts on the partial/noisy observation
-            learner_action = self.learner.act(observed_state)
+            learner_action = self.learner.act(observed_state, training = False)
             # Expert acts on the full observation
-            expert_action = self.expert.act(state, training=False)
+            expert_action = self.expert.act(state, training = False)
             
 
 
@@ -214,7 +214,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
             
             # Θυμήσου την αλληλεπίδραση expert-περιβάλλοντος, δηλαδή:
             # Expert provides correct labels for those states
-            self.learner.remember(state, expert_action, reward, next_state, done)
+            self.learner.remember(observed_state, expert_action)
             
             state         = next_state
             total_reward += reward
@@ -250,7 +250,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         batch_count = 0
         
         for batch in range(self.config.training_batches_per_iter):
-            loss = self.learner.replay(wrapper=self.observation_wrapper)
+            loss = self.learner.replay()
             if loss is not None:
                 total_loss  += loss
                 batch_count += 1
@@ -266,7 +266,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         batch_count = 0
         
         for batch in range(num_batches):
-            loss = self.learner.replay(wrapper=self.observation_wrapper)
+            loss = self.learner.replay()
             if loss is not None:
                 total_loss += loss
                 batch_count += 1
@@ -319,17 +319,11 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
                 self.metrics['episode_lengths'].append(episode_info['steps'])
 
                 # IMMEDIATE FLAG SAVE - Right after episode completion
-                if episode_info['flag_get']:
-                    success   = False
-                    tries_num = 1
-                    temp      = None
-                    if self.config.observation_type == 'noisy':
-                        tries_num = 3 # 3 tries if noise exists
-                        temp      = self.observation_wrapper
-                    
+                if episode_info['flag_get']:    
                     success = self.test(
-                        test_agent = self.learner, render = True, episodes = tries_num,
-                        env_unresponsive = True, observation_wrapper = temp
+                        test_agent = self.learner, render = True, episodes = 3,
+                        observation_wrapper = self.observation_wrapper,
+                        env_unresponsive = True
                     )
                     if not success:
                         continue
@@ -556,8 +550,8 @@ def main():
     config = DaggerConfig(
         observation_type          = 'noisy',  # partial, noisy, downsampled...
         noise_level               = 0.2,      # Χρησιμοποιείται μόνο για noisy observation_type!
-        iterations                = 1000,
-        episodes_per_iter         = 15,
+        iterations                = 500,
+        episodes_per_iter         = 3,
         training_batches_per_iter = 300,
         expert_model_path= os.path.join(
             base_dir, '..',
@@ -567,7 +561,7 @@ def main():
         stage                    = '1',
         render                   = False,
         save_frequency           = 400,
-        max_episode_steps        = 1500, # Στα 300 κάπου τερματίζεται η πίστα!
+        max_episode_steps        = 800, # Στα 300 κάπου τερματίζεται η πίστα!
     )
     
     trainer = DaggerTrainer(config)

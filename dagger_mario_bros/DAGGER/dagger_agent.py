@@ -47,7 +47,7 @@ class DaggerMarioAgent(MarioAgent):
         
         return
         
-    def remember(self, state: np.ndarray, expert_action: int, *args) -> None:
+    def remember(self, state: np.ndarray, expert_action: int) -> None:
         '''
         Αποθήκευση ζευγών (state, expert_action) για εκπαίδευση DAGGER
         
@@ -60,7 +60,7 @@ class DaggerMarioAgent(MarioAgent):
 
         return
         
-    def replay(self, wrapper: Optional[PartialObservationWrapper] = None) -> Optional[float]:
+    def replay(self) -> Optional[float]:
         '''
         Εκπαίδευση DAGGER - Supervised learning με expert demonstrations
 
@@ -75,10 +75,6 @@ class DaggerMarioAgent(MarioAgent):
 
         states         = [transition[0] for transition in batch]
         expert_actions = [transition[1] for transition in batch]
-
-        # Εφαρμογή observation wrapper αν υπάρχει
-        if wrapper:
-            states = [wrapper.transform_observation(s) for s in states]
 
         # Μετατροπή σε tensors
         states_tensor = torch.FloatTensor(np.array(states)).to(self.device)

@@ -51,3 +51,9 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 ```
 
 ---
+
+
+## Τα βίντεο μας στο YouTube:
+
+https://youtu.be/h9JXUzJS6rU?si=cJCze_dh0Qy8pmU7
+https://youtu.be/ixdq4bWbvA0?si=uFaUeUJ6ANvZHXFK

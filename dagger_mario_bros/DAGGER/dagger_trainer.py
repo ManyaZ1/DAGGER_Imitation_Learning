@@ -67,11 +67,44 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         self.config = config
         self._setup_environment()
         self._setup_agents()
+        # ---------- BC warm-up ----------
+        self._behaviour_cloning_warmup(
+            n_frames=100_000,      # how many expert-labelled frames
+            pretrain_steps=5_000   # how many offline gradient steps
+        )
+
         self._setup_directories()
         self._setup_metrics()
 
         return
-        
+    def _behaviour_cloning_warmup(self,
+                              n_frames: int = 100_000,
+                              pretrain_steps: int = 5_000):
+        print(f'Collecting {n_frames} expert frames for BC …')
+        frames_collected = 0
+        state_full = self.env.reset()
+
+        while frames_collected < n_frames:
+            # 1. expert chooses the action on the *full* observation
+            action = self.expert.act(state_full, training=False)
+
+            # 2. store the learner’s *partial* view + expert label
+            state_part = (self.observation_wrapper.transform_observation(state_full)
+                            if self.observation_wrapper else state_full)
+            self.learner.remember(state_part, action)
+
+            # 3. step the env with the expert action
+            state_full, _, done, _ = self.env.step(action)
+            frames_collected += 1
+            if done:
+                state_full = self.env.reset()
+
+        # -------- offline supervised training --------
+        print(f'Pre-training for {pretrain_steps} mini-batch updates …')
+        for _ in range(pretrain_steps):
+            self.learner.replay(wrapper=None)   # wrapper already applied above
+        # turn exploration OFF forever
+        self.learner.epsilon = 0.0    
     def _setup_environment(self, printless: bool = False):
         env_name = f'SuperMarioBros-{self.config.world}-{self.config.stage}-v0'
         
@@ -198,7 +231,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
             observed_state = self.observation_wrapper.transform_observation(state) \
                              if self.observation_wrapper else state
             # Learner acts on the partial/noisy observation
-            learner_action = self.learner.act(observed_state)
+            learner_action = self.learner.act(observed_state, training=False)
             # Expert acts on the full observation
             expert_action = self.expert.act(state, training=False)
             
@@ -214,8 +247,8 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
             
             # Θυμήσου την αλληλεπίδραση expert-περιβάλλοντος, δηλαδή:
             # Expert provides correct labels for those states
-            self.learner.remember(state, expert_action, reward, next_state, done)
-            
+            #self.learner.remember(state, expert_action, reward, next_state, done)
+            self.learner.remember(observed_state, expert_action)
             state         = next_state
             total_reward += reward
             step_count   += 1
@@ -250,7 +283,9 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         batch_count = 0
         
         for batch in range(self.config.training_batches_per_iter):
-            loss = self.learner.replay(wrapper=self.observation_wrapper)
+           #loss = self.learner.replay(wrapper=self.observation_wrapper)
+            loss = self.learner.replay(wrapper=None)
+
             if loss is not None:
                 total_loss  += loss
                 batch_count += 1
@@ -554,11 +589,11 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
 
 def main():
     config = DaggerConfig(
-        observation_type          = 'noisy',  # partial, noisy, downsampled...
+        observation_type          = 'partial',  # partial, noisy, downsampled...
         noise_level               = 0.2,      # Χρησιμοποιείται μόνο για noisy observation_type!
-        iterations                = 1000,
-        episodes_per_iter         = 15,
-        training_batches_per_iter = 300,
+        iterations                = 200,
+        episodes_per_iter         = 10,
+        training_batches_per_iter = 150,
         expert_model_path= os.path.join(
             base_dir, '..',
             'expert-SMB_DQN', 'models', 'ep30000_MARIO_EXPERT.pth'

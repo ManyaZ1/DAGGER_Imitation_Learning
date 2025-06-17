@@ -24,7 +24,7 @@ def main():
         base_dir, 'SUCCESS',
         # 'dagger_mario_iter27_20250609_131303.pth'
         # 'mario_FLAG_iter574_ep19_3425_20250609_072905.pth'
-        'mario_FLAG_iter4_ep2_3437_BC_warmup20250616_225237_partial.pth'
+        'mario_FLAG_iter100_ep10_3435_BCwarmup20250617_024339_partial.pth'
     )
 
     trainerd.test(

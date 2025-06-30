@@ -226,9 +226,10 @@ class BehaviorCloningAgent:
             # Validation phase
             self.network.eval()
             with torch.no_grad():
-                val_predictions = self.network(val_states)
-                val_loss = self.criterion(val_predictions, val_actions)
-                
+                val_predictions = self.network(val_states) #  Για κάθε sample στο validation set, δίνει logits για κάθε action
+                #πόσο "λάθος" είναι το δίκτυο στις προβλέψεις του σε σχέση με τον expert
+                val_loss = self.criterion(val_predictions, val_actions)  #val_actions ground-truth actions του expert 
+ 
                 # Accuracy
                 predicted_actions = val_predictions.argmax(dim=1)
                 accuracy = (predicted_actions == val_actions).float().mean().item()

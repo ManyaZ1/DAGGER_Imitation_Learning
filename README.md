@@ -50,6 +50,8 @@ pip install torch
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
 
+### To do 
+μέσος όρος για dagger/bc
 ---
 
 

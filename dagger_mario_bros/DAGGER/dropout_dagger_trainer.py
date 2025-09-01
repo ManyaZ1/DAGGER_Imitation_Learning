@@ -60,9 +60,9 @@ class DropoutDaggerConfig:
     render: bool = False
     save_frequency: int = 1
     max_episode_steps: int = 1000
-    only_for_testing: bool = False  # Όταν θέλουμε κυρίως να κάνουμε απλά testing!
+    only_for_testing: bool = False  # Όταν θέλουμε να κάνουμε απλά testing
 
-class DropoutDaggerTrainer(MarioTrainer):  # Κληρονομεί κυρίως για το test method!!!
+class DropoutDaggerTrainer(MarioTrainer):  # Κληρονομεί κυρίως για το test method
     ''' DropoutDAGGER [Dataset Aggregation with Dropout] trainer για τον Mario AI agent. '''
     
     def __init__(self, config: DropoutDaggerConfig):

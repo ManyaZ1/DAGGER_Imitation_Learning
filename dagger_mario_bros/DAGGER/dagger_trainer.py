@@ -569,7 +569,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
 def main():
     config = DaggerConfig(
         observation_type          = 'noisy',  # partial, noisy, downsampled...
-        noise_level               = 0.2,      # Χρησιμοποιείται μόνο για noisy observation_type!
+        noise_level               = 0.1,      # Χρησιμοποιείται μόνο για noisy observation_type!
         iterations                = 300,
         episodes_per_iter         = 3,
         training_batches_per_iter = 300,

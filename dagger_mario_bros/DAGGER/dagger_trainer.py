@@ -570,7 +570,7 @@ def main():
     config = DaggerConfig(
         observation_type          = 'noisy',  # partial, noisy, downsampled...
         noise_level               = 0.2,      # Χρησιμοποιείται μόνο για noisy observation_type!
-        iterations                = 500,
+        iterations                = 300,
         episodes_per_iter         = 3,
         training_batches_per_iter = 300,
         expert_model_path         = os.path.join(
@@ -581,7 +581,7 @@ def main():
         stage                    = '1',
         render                   = False,
         save_frequency           = 400,
-        max_episode_steps        = 800, # Στα 300 κάπου τερματίζεται η πίστα!
+        max_episode_steps        = 500, # Στα 300 κάπου τερματίζεται η πίστα!
     )
     
     trainer = DaggerTrainer(config)

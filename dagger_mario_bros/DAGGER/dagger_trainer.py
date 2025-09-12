@@ -581,7 +581,7 @@ def main():
         stage                    = '1',
         render                   = False,
         save_frequency           = 400,
-        max_episode_steps        = 500, # Στα 300 κάπου τερματίζεται η πίστα!
+        max_episode_steps        = 600, # Στα 300 κάπου τερματίζεται η πίστα!
     )
     
     trainer = DaggerTrainer(config)

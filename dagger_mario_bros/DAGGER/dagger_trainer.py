@@ -13,6 +13,16 @@ import seaborn as sns
 # Για το environment access violation reading 0x000000000003C200!
 import time
 import gc
+import random
+import torch
+
+def set_seed(seed):
+    'προσθηκε seed'
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 base_dir   = os.path.dirname(__file__)              
 pkg_parent = os.path.abspath(os.path.join(base_dir, '..', 'expert-SMB_DQN'))
@@ -60,6 +70,7 @@ class DaggerConfig:
     save_frequency:            int = 1
     max_episode_steps:         int = 1000
     only_for_testing:          bool = False # Όταν θέλουμε κυρίως να κάνουμε απλά testing!
+    seed:                      int = 0    
 
 class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για το test method!!!
     ''' DAGGER [Dataset Aggregation] trainer για τον Mario AI agent. '''
@@ -566,10 +577,11 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         
         return plot_path, detailed_plot_path, stats_path
 
-def main():
+def main(seed=1):  # Add seed parameter
+    set_seed(seed)  # Set the seed
     config = DaggerConfig(
-        observation_type          = 'noisy',  # partial, noisy, downsampled...
-        noise_level               = 0.2,      # Χρησιμοποιείται μόνο για noisy observation_type!
+        observation_type          = 'noisy',
+        noise_level               = 0.2,
         iterations                = 500,
         episodes_per_iter         = 3,
         training_batches_per_iter = 300,
@@ -581,13 +593,45 @@ def main():
         stage                    = '1',
         render                   = False,
         save_frequency           = 400,
-        max_episode_steps        = 800, # Στα 300 κάπου τερματίζεται η πίστα!
+        max_episode_steps        = 800,
+        seed                     = seed  # Add seed to config
     )
     
     trainer = DaggerTrainer(config)
-    trainer.train()
-
-    return
+    results = trainer.train()
+    
+    # Save detailed statistics with seed information
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    stats_dir = os.path.join(base_dir, 'statistics')
+    os.makedirs(stats_dir, exist_ok=True)
+    
+    stats_path = os.path.join(stats_dir, f'dagger_stats_seed{seed}_{timestamp}.json')
+    statistics = {
+        'seed': seed,
+        'best_reward': results['best_reward'],
+        'total_episodes': results['total_episodes'],
+        'metrics': {
+            'rewards': results['final_metrics']['episode_rewards'],
+            'agreements': results['final_metrics']['expert_agreement'],
+            'losses': results['final_metrics']['training_losses'],
+            'episode_lengths': results['final_metrics']['episode_lengths'],
+            'iteration_rewards': results['final_metrics']['iteration_rewards']
+        },
+        'final_stats': {
+            'avg_reward': np.mean(results['final_metrics']['episode_rewards']),
+            'median_reward': np.median(results['final_metrics']['episode_rewards']),
+            'reward_25th': np.percentile(results['final_metrics']['episode_rewards'], 25),
+            'reward_75th': np.percentile(results['final_metrics']['episode_rewards'], 75),
+            'final_agreement': np.mean(results['final_metrics']['expert_agreement'][-10:]),
+            'avg_loss': np.mean(results['final_metrics']['training_losses'])
+        }
+    }
+    
+    with open(stats_path, 'w') as f:
+        json.dump(statistics, f, indent=2)
+    print(f"\nDetailed statistics saved to: {stats_path}")
+    
+    return results
 
 if __name__ == '__main__':
-    main()
+    main(seed=1)  # Run with seed 1

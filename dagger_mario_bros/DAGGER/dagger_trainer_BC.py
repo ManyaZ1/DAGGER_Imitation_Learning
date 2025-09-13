@@ -13,6 +13,19 @@ import torch
 # Για το environment access violation reading 0x000000000003C200!
 import time
 import gc
+import random
+
+def set_seed(seed):
+    'προσθηκε seed'
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+
+
 
 base_dir   = os.path.dirname(__file__)              
 pkg_parent = os.path.abspath(os.path.join(base_dir, '..', 'expert-SMB_DQN'))
@@ -38,7 +51,7 @@ temp = os.path.abspath(os.path.join(base_dir, '..'))
 sys.path.append(temp)
 from observation_wrapper import PartialObservationWrapper
 
-# Γιατί μας τα ζάλιζε ένα gym...
+# ΛΟΓΩ gym...
 import warnings
 warnings.filterwarnings('ignore', category = UserWarning, module = 'gym')
 
@@ -59,6 +72,7 @@ class DaggerConfig:
     render:                    bool = False
     save_frequency:            int = 1
     max_episode_steps:         int = 1000
+    seed: int = 0
 
 class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για το test method!!!
     ''' DAGGER [Dataset Aggregation] trainer για τον Mario AI agent. '''
@@ -161,6 +175,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         env_name = f'SuperMarioBros-{self.config.world}-{self.config.stage}-v0'
         
         raw_env     = gym_super_mario_bros.make(env_name)
+        raw_env.seed(self.config.seed) # set seed for random trials
         wrapped_env = JoypadSpace(raw_env, SIMPLE_MOVEMENT)
         self.env    = MarioPreprocessor(wrapped_env)
         
@@ -396,13 +411,13 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         
         # Save model
         model_path = os.path.join(
-            self.save_dir, f'dagger_mario_BCwDAGGER_iter{iteration+1}_{timestamp}.pth'
+            self.save_dir, f'dagger_mario_BCwDAGGER_seed{self.config.seed}_iteration{iteration+1}_{timestamp}.pth'
         )
         self.learner.save_model(str(model_path))
         
         # Save στατιστικά
         metrics_path = os.path.join(
-            self.save_dir, f'metrics_iter{iteration+1}_{timestamp}.json'
+            self.save_dir, f'metrics_dagger_mario_BCwDAGGER_seed{self.config.seed}_iter{iteration+1}_{timestamp}.json'
         )
         with open(metrics_path, 'w') as f:
             json.dump(metrics, f, indent = 2)
@@ -463,7 +478,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
                     temp = self.config.observation_type if self.config.observation_type is not None else 'normal'
                     flag_model_path = os.path.join(
                         self.save_dir,
-                        f'mario_FLAG_BCwDAGGER_iter{iteration+1}_ep{episode+1}_{int(reward_temp)}_{timestamp}_{temp}.pth'
+                        f'mario_FLAG_BCwDAGGER_seed{self.config.seed}_iter{iteration+1}_ep{episode+1}_{int(reward_temp)}_{timestamp}_{temp}.pth'
                     )
                     self.learner.save_model(flag_model_path)
                     print(f'-> FLAG MODEL SAVED IMMEDIATELY: {flag_model_path}')
@@ -669,7 +684,8 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         
         return plot_path, detailed_plot_path, stats_path
 
-def main():
+def main(seed=0):
+    set_seed(seed)
     config = DaggerConfig(
         observation_type          = 'partial',  # partial, noisy, downsampled...
         noise_level               = 0.2,      # Χρησιμοποιείται μόνο για noisy observation_type!
@@ -679,12 +695,13 @@ def main():
         expert_model_path= os.path.join(
             base_dir, '..',
             'expert-SMB_DQN', 'models', 'ep30000_MARIO_EXPERT.pth'
-        ),
+        ), #expert model path
         world                    = '1',
         stage                    = '1',
         render                   = False,
         save_frequency           = 400,
         max_episode_steps        = 1500, # Στα 300 κάπου τερματίζεται η πίστα!
+        seed                     = seed
     )
     
     trainer = DaggerTrainer(config)
@@ -693,4 +710,5 @@ def main():
     return
 
 if __name__ == '__main__':
-    main()
+    main(seed=5)
+    seeds = [1, 2, 3, 4, 5] #plus one without seed

@@ -1,0 +1,13 @@
+DAGGER Training Summary
+==================================================
+
+Total Episodes: 1500
+Total Iterations: 500
+Best Episode Reward: 3439.00
+Average Episode Reward: 2066.94
+Final Iteration Reward: 3175.40
+Average Expert Agreement: 0.760
+Final Expert Agreement: 0.907
+Average Training Loss: 0.522149
+Final Training Loss: 0.269166
+Average Episode Length: 480.2

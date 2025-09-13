@@ -50,7 +50,21 @@ pip install torch
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
 
-### To do 
+### 5. Testing
+run the following command to test if everything is set up correctly:
+#### For Behavior Cloning
+#### For DAGGER
+successfully trained models are provided in the `SUCCESS` folder
+run the dagger_main file
+```bash
+(mario) C:\Users\USER>conda activate mario
+
+(mario) C:\Users\USER>cd C:\Users\USER\Documents\GitHub\DAGGER_Imitation_Learning\dagger_mario_bros\DAGGER
+
+(mario) C:\Users\USER\Documents\GitHub\DAGGER_Imitation_Learning\dagger_mario_bros\DAGGER>python DAGGER_main.py
+```
+
+### To do
 μέσος όρος για dagger/bc
 ---
 

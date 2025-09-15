@@ -696,5 +696,8 @@ def main():
     return
 
 if __name__ == '__main__':
-    for _ in range(13):
-        main()
+    for _ in range(4):
+        try:
+            main()
+        except:
+            pass

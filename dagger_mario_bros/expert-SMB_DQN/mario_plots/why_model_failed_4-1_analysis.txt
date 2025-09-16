@@ -1,0 +1,10 @@
+=== Problem Analysis: Why Model Fail on Harder Stages... ===
+
+1. Resolution Issues (84x84 Input)
+
+2. Network Capacity:
+   - Only 3 conv layers → limited hierarchical features
+   - Single 512-neuron FC layer → insufficient decision complexity
+
+3. Training Stability:
+   - High learning rate (5e-5) can cause instability

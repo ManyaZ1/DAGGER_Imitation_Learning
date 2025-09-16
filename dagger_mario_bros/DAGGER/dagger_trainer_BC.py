@@ -101,7 +101,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         print(f'Pre-training until agreement ≥ {int(target_agreement * 100)}% or max steps reached …')
 
         for step in range(1, pretrain_steps + 1):
-            self.learner.replay(wrapper=None)
+            self.learner.replay()
 
             # Every N steps, check expert agreement
             if step % check_interval == 0:
@@ -153,7 +153,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         # -------- offline supervised training --------
         print(f'Pre-training for {pretrain_steps} mini-batch updates …')
         for _ in range(pretrain_steps):
-            self.learner.replay(wrapper=None)   # wrapper already applied above
+            self.learner.replay()   # wrapper already applied above
         # turn exploration OFF forever
         self.learner.epsilon = 0.0    
     
@@ -364,7 +364,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         
         for batch in range(self.config.training_batches_per_iter):
            #loss = self.learner.replay(wrapper=self.observation_wrapper)
-            loss = self.learner.replay(wrapper=None)
+            loss = self.learner.replay()
 
             if loss is not None:
                 total_loss  += loss
@@ -382,7 +382,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
         
         for batch in range(num_batches):
             # loss = self.learner.replay(wrapper=self.observation_wrapper)
-            loss = self.learner.replay(wrapper=None)
+            loss = self.learner.replay()
 
             if loss is not None:
                 total_loss += loss
@@ -441,7 +441,7 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
                     tries_num = 1
                     temp      = None
                     if self.config.observation_type == 'noisy':
-                        tries_num = 3 # 3 tries if noise exists
+                        tries_num = 2 # [x] tries if noise exists
                         temp      = self.observation_wrapper
                     
                     success = self.test(
@@ -457,6 +457,9 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
                     print(f'Training learner immediately with '
                         f'{len(getattr(self.learner, "dagger_memory", self.learner.dagger_memory))} experiences...')
                     immediate_loss = self._train_learner_immediate()
+
+                    if reward_temp < 3439:
+                        continue
                     
                     # Save the model that just learned from the successful episode
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -671,12 +674,12 @@ class DaggerTrainer(MarioTrainer): # Κληρονομεί κυρίως για τ
 
 def main():
     config = DaggerConfig(
-        observation_type          = 'partial',  # partial, noisy, downsampled...
-        noise_level               = 0.2,      # Χρησιμοποιείται μόνο για noisy observation_type!
-        iterations                = 100,
-        episodes_per_iter         = 10,
-        training_batches_per_iter = 150,
-        expert_model_path= os.path.join(
+        observation_type          = 'noisy',  # partial, noisy, downsampled...
+        noise_level               = 0.1,      # Χρησιμοποιείται μόνο για noisy observation_type!
+        iterations                = 300,
+        episodes_per_iter         = 3,
+        training_batches_per_iter = 300,
+        expert_model_path         = os.path.join(
             base_dir, '..',
             'expert-SMB_DQN', 'models', 'ep30000_MARIO_EXPERT.pth'
         ),
@@ -684,7 +687,7 @@ def main():
         stage                    = '1',
         render                   = False,
         save_frequency           = 400,
-        max_episode_steps        = 1500, # Στα 300 κάπου τερματίζεται η πίστα!
+        max_episode_steps        = 600, # Στα 300 κάπου τερματίζεται η πίστα!
     )
     
     trainer = DaggerTrainer(config)
@@ -693,4 +696,8 @@ def main():
     return
 
 if __name__ == '__main__':
-    main()
+    for _ in range(4):
+        try:
+            main()
+        except:
+            pass

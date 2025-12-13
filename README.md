@@ -1,5 +1,6 @@
 # DAGGER_Imitation_Learning
-## Intelligent Control (ECE_ΔK807) – Team Projects
+## Intelligent Control (ECE_DK807) – Team Projects 
+## AI Hub University of Patras competition
 ### 4. Imitation Learning with DAGGER or Privileged Information 🕹️
 
 ### 🧠 Topics
@@ -55,3 +56,8 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 https://youtu.be/h9JXUzJS6rU?si=cJCze_dh0Qy8pmU7
 
 https://youtu.be/ixdq4bWbvA0?si=uFaUeUJ6ANvZHXFK
+
+## AI hub
+2nd award: https://sites.google.com/g.upatras.gr/ai-hub/%CE%B4%CE%B9%CE%B1%CE%B3%CF%89%CE%BD%CE%B9%CF%83%CE%BC%CF%8C%CF%82-%CF%84%CE%BD/2025-%CE%B1%CF%80%CE%BF%CE%BD%CE%BF%CE%BC%CE%AE-%CE%B2%CF%81%CE%B1%CE%B2%CE%B5%CE%AF%CF%89%CE%BD
+
+

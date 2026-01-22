@@ -58,6 +58,6 @@ https://youtu.be/h9JXUzJS6rU?si=cJCze_dh0Qy8pmU7
 https://youtu.be/ixdq4bWbvA0?si=uFaUeUJ6ANvZHXFK
 
 ## AI hub
-2nd award: https://sites.google.com/g.upatras.gr/ai-hub/%CE%B4%CE%B9%CE%B1%CE%B3%CF%89%CE%BD%CE%B9%CF%83%CE%BC%CF%8C%CF%82-%CF%84%CE%BD/2025-%CE%B1%CF%80%CE%BF%CE%BD%CE%BF%CE%BC%CE%AE-%CE%B2%CF%81%CE%B1%CE%B2%CE%B5%CE%AF%CF%89%CE%BD
+2nd award: [AI-Hub results](https://sites.google.com/g.upatras.gr/ai-hub/%CE%B4%CE%B9%CE%B1%CE%B3%CF%89%CE%BD%CE%B9%CF%83%CE%BC%CF%8C%CF%82-%CF%84%CE%BD/2025-%CE%B1%CF%80%CE%BF%CF%84%CE%B5%CE%BB%CE%AD%CF%83%CE%BC%CE%B1%CF%84%CE%B1)
 
 
